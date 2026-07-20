@@ -1,0 +1,12 @@
+import { readFileSync,readdirSync } from 'node:fs';
+const dir='supabase/migrations';const files=readdirSync(dir).filter((x)=>x.endsWith('.sql')).sort();if(!files.length)throw new Error('No migrations found.');const sql=files.map((name)=>readFileSync(`${dir}/${name}`,'utf8')).join('\n');
+const required=['districts','profiles','dealers','customers','customer_documents','price_lists','price_list_items','inverter_products','quotations','quotation_versions','quotation_items','quotation_status_history','agreements','agreement_signatures','projects','project_stage_history','project_documents','project_material_requirements','installation_materials','inventory_items','inventory_serials','stock_transactions','purchase_invoices','purchase_invoice_items','dealer_commissions','dealer_commission_payments','customer_invoices','customer_invoice_items','subsidy_rules','tax_rules','company_settings','document_counters','audit_logs','ai_extraction_logs'];
+for(const table of required)if(!new RegExp(`create table public\\.${table}\\s*\\(`,'i').test(sql))throw new Error(`Missing table ${table}`);
+for(const role of ['super_admin','district_manager','installer','accountant'])if(new RegExp(`['"]${role}['"]`).test(sql))throw new Error(`Forbidden legacy role ${role}`);
+if(!/create policy storage_customer_read/i.test(sql)||!/public=false/i.test(sql))throw new Error('Private storage policies are incomplete.');
+if(!/quotation_id uuid not null unique references public\.quotations/i.test(sql)||!/one_active_invoice_per_project/i.test(sql))throw new Error('Duplicate project or invoice guard missing.');
+if(!/gst_included boolean not null default true/i.test(sql))throw new Error('GST-inclusive quotation invariant missing.');
+for(const fn of ['save_crm_settings','update_inventory_item','archive_inventory_item','save_project_material_requirements'])if(!new RegExp(`create or replace function public\\.${fn}\\s*\\(`,'i').test(sql))throw new Error(`Missing secured operation ${fn}`);
+if(!/settings_authenticated_read/i.test(sql))throw new Error('Authenticated users cannot read printable company settings.');
+for(const file of files){const source=readFileSync(`${dir}/${file}`,'utf8');if((source.match(/\bbegin;/gi)||[]).length!==(source.match(/\bcommit;/gi)||[]).length)throw new Error(`Unbalanced transaction in ${file}`);}
+console.log(`Verified ${files.length} ordered migrations, ${required.length} required tables, role enum, private storage, and duplicate/GST guards.`);

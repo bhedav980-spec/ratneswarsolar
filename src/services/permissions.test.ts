@@ -1,0 +1,3 @@
+import { describe,expect,it } from 'vitest';
+import { can } from './permissions';
+describe('three-role permission matrix',()=>{it('keeps Dealer out of internal and project modules',()=>{expect(can('dealer','customer_copy')).toBe(true);expect(can('dealer','internal_copy')).toBe(false);expect(can('dealer','manage_projects')).toBe(false);expect(can('dealer','manage_inventory')).toBe(false);});it('restricts global settings and payments to Admin',()=>{expect(can('admin','manage_users')).toBe(true);expect(can('admin','pay_commission')).toBe(true);expect(can('district_partner','manage_users')).toBe(false);expect(can('district_partner','pay_commission')).toBe(false);});});
