@@ -8,6 +8,7 @@ interface CrmContextValue {
   saveQuotation: (value: Quotation) => Promise<void>; setQuotationStatus: (quoteId: string, status: Quotation['status'], reason?: string) => Promise<void>;
   saveAgreementDocument: (quoteId: string, generatedFilePath: string) => Promise<void>;
   saveFeasibilityAndCreateProject: (quoteId: string, input: FeasibilityInput) => Promise<void>;
+  updateFeasibilityReport: (quoteId: string, input: FeasibilityInput) => Promise<void>;
   changeProjectStage: (projectId: string, stage: ProjectStage, note: string, overrideReason?: string) => Promise<void>;
   addDealer: (value: Dealer) => Promise<void>; addPayment: (value: Payment) => Promise<void>; addExpense: (value: Expense) => Promise<void>;
   issueInvoice: (value: Invoice) => Promise<void>; postStockTransaction: (value: StockTransaction) => Promise<void>;
@@ -47,6 +48,7 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
     saveQuotation: (v) => run((d) => repo.saveQuotation(d, v)), setQuotationStatus: (id, status, reason) => run((d) => repo.setQuotationStatus(d, id, status, reason)),
     saveAgreementDocument: (id, path) => run((d) => repo.saveAgreementDocument(d, id, path)),
     saveFeasibilityAndCreateProject: (id, input) => run((d) => repo.saveFeasibilityAndCreateProject(d, id, input)),
+    updateFeasibilityReport: (id, input) => run((d) => repo.updateFeasibilityReport(d, id, input)),
     changeProjectStage: (id, stage, note, override) => run((d) => repo.changeProjectStage(d, id, stage, note, override)),
     addDealer: (v) => run((d) => repo.addDealer(d, v)), addPayment: (v) => run((d) => repo.addPayment(d, v)),
     addExpense: (v) => run((d) => repo.addExpense(d, v)),

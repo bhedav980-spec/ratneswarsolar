@@ -33,7 +33,8 @@ describe('clean printable documents', () => {
   it('prints a fixed two-page quotation and separate invoice GST lines', () => {
     expect(quotation).toContain('SYSTEM BILL OF MATERIALS (BOM)');
     expect(quotation).toContain('Online Monitoring System');
-    expect(quotationEngine).toContain("drawPageOne(doc,input,logo);doc.addPage('a4','portrait');drawPageTwo");
+    expect(quotationEngine).toContain("drawPageOne(doc,input,logo);doc.addPage('a4','portrait');drawPageTwo(doc,input,logo,signature)");
+    expect(quotationEngine).toContain("ratneswar-authorised-signature.png");
     expect(invoice).toContain("line.lineType==='supply'");
     expect(invoiceEngine).toContain('line.gstRate/2');
     expect(invoiceEngine).toContain('splitLines.forEach');

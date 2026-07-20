@@ -171,6 +171,16 @@ export interface FeasibilityInput {
   applicationReferenceNumber: string;
   janSamarthId?: string;
   discomId?: string;
+  applicantName?: string;
+  consumerNumber?: string;
+  installationAddress?: string;
+  districtName?: string;
+  stateName?: string;
+  pinCode?: string;
+  oemName?: string;
+  appliedCapacityKw?: number;
+  actualCapacityKw?: number;
+  projectCost?: number;
 }
 
 export interface FeasibilityReport extends FeasibilityInput {

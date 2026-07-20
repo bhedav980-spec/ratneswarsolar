@@ -92,7 +92,14 @@ export async function loadSnapshot(): Promise<CrmSnapshot> {
     customers: (customers.data ?? []).map(mapCustomer), surveys: (surveys.data ?? []).map((r: any) => r.payload as SiteSurvey),
     quotations: (quotes.data ?? []).map((r: any) => r.payload as Quotation),
     agreements: (agreementRows as any[]).map((r): AgreementRecord => ({ id:r.id,agreementNo:r.agreement_no,quotationId:r.quotation_id,customerId:r.customer_id,projectId:r.project_id,agreementDate:r.agreement_date,status:r.status,generatedFilePath:r.generated_file_path,createdAt:r.created_at })),
-    feasibilityReports: (feasibilityRows as any[]).map((r): FeasibilityReport => ({ id:r.id,quotationId:r.quotation_id,customerId:r.customer_id,agreementId:r.agreement_id,projectId:r.project_id,reportDate:r.report_date,applicationReferenceNumber:r.application_reference_number,janSamarthId:r.jan_samarth_id,discomId:r.discom_id,appliedCapacityKw:Number(r.applied_capacity_kw),actualCapacityKw:Number(r.actual_capacity_kw),projectCost:Number(r.project_cost),generatedAt:r.generated_at })),
+    feasibilityReports: (feasibilityRows as any[]).map((r): FeasibilityReport => ({
+      id:r.id,quotationId:r.quotation_id,customerId:r.customer_id,agreementId:r.agreement_id,projectId:r.project_id,reportDate:r.report_date,
+      applicationReferenceNumber:r.application_reference_number,janSamarthId:r.jan_samarth_id,discomId:r.discom_id,
+      applicantName:r.applicant_name ?? r.snapshot?.applicantName,consumerNumber:r.consumer_number ?? r.snapshot?.consumerNumber,
+      installationAddress:r.installation_address ?? r.snapshot?.installationAddress,districtName:r.district_name ?? r.snapshot?.districtName,
+      stateName:r.state_name ?? r.snapshot?.stateName,pinCode:r.pin_code ?? r.snapshot?.pinCode,oemName:r.oem_name ?? r.snapshot?.oemName ?? r.snapshot?.panelBrand,
+      appliedCapacityKw:Number(r.applied_capacity_kw),actualCapacityKw:Number(r.actual_capacity_kw),projectCost:Number(r.project_cost),generatedAt:r.generated_at,
+    })),
     projects: (projects.data ?? []).map((r: any) => r.payload),
     dealers: (dealers.data ?? []).map((r: any) => ({ id: r.id, dealerNo: r.dealer_no, name: r.name, mobile: r.mobile, email: r.email, address: r.address, district: r.district_name, districtId: r.district_id, loginUserId: r.login_user_id, commissionType: r.default_commission_type, commissionValue: Number(r.default_commission_value), active: r.active })),
     inventory: (inventory.data ?? []).map((r: any) => ({ id: r.id, itemCode: r.item_code, itemName: r.item_name, category: r.category, brand: r.brand, model: r.model, specification: r.specification, warehouseDistrict: r.district_name, unit: r.unit, onHand: Number(r.on_hand), reserved: Number(r.reserved), available: Number(r.available), reorderLevel: Number(r.reorder_level), averageRate: Number(r.average_rate) })),
@@ -148,6 +155,9 @@ export async function saveAgreementDocument(_snapshot: CrmSnapshot, quoteId: str
 }
 export async function saveFeasibilityAndCreateProject(_snapshot: CrmSnapshot, quoteId: string, input: FeasibilityInput) {
   const { error } = await requireClient().rpc('save_feasibility_and_create_project', { p_quotation_id: quoteId, p_data: input }); throwIf(error); return loadSnapshot();
+}
+export async function updateFeasibilityReport(_snapshot: CrmSnapshot, quoteId: string, input: FeasibilityInput) {
+  const { error } = await requireClient().rpc('update_feasibility_report', { p_quotation_id: quoteId, p_data: input }); throwIf(error); return loadSnapshot();
 }
 export async function changeProjectStage(_snapshot: CrmSnapshot, projectId: string, stage: ProjectStage, note: string, overrideReason = '') {
   const { error } = await requireClient().rpc('change_project_stage', { p_project_id: projectId, p_new_stage: stage, p_note: note || null, p_override_reason: overrideReason || null }); throwIf(error); return loadSnapshot();

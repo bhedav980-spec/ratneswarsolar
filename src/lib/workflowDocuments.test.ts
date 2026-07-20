@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import JSZip from 'jszip';
 import { populateAgreementXml } from './agreementDocx';
-import { createFeasibilityPdf } from './feasibilityPdf';
+import { createFeasibilityPdf, quotationSerialNumber } from './feasibilityPdf';
 import type { Customer, Quotation } from '../types/domain';
 
 const customer = {
@@ -27,10 +27,16 @@ describe('Agreement and feasibility workflow documents', () => {
   });
 
   it('creates exactly one A4 feasibility PDF page from quote/customer data', async () => {
-    const pdf = await createFeasibilityPdf({ quotation, customer, feasibility:{ applicationReferenceNumber:'APP-123',janSamarthId:'',discomId:'PGVCL-RAPAR' } });
+    const pdf = await createFeasibilityPdf({ quotation, customer, feasibility:{ applicationReferenceNumber:'APP-123',janSamarthId:'',discomId:'PGVCL-RAPAR',oemName:'WAAREE EDITED',actualCapacityKw:3.3 } });
     expect(pdf.getNumberOfPages()).toBe(1);
     const page = pdf.internal.pageSize;
     expect(page.getWidth()).toBeCloseTo(210, 0);
     expect(page.getHeight()).toBeCloseTo(297, 0);
+  });
+
+  it('uses only the serial portion of a quotation number as the EPC number', () => {
+    expect(quotationSerialNumber('RE-RSS-PGVCL-2026038')).toBe('38');
+    expect(quotationSerialNumber('RE-RSS-PGVCL-20260002')).toBe('2');
+    expect(quotationSerialNumber('RE/RSS/PGVCL/2026/0042')).toBe('42');
   });
 });

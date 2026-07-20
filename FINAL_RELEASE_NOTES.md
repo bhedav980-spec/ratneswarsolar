@@ -67,3 +67,14 @@ For a new database, run `supabase/SETUP.sql`, then migrations `202607170006_resi
 - Enforced the workflow `Approved → Agreement DOCX → Feasibility PDF → Project Created` in secured database functions.
 - Added `feasibility_reports`, private DOCX storage support, audit events, RLS and migration `202607200015_agreement_feasibility_project_gate.sql`.
 - Added `FINAL_V11_DEPLOYMENT.md` with the exact existing-production upgrade sequence.
+
+# Final v12 — Editable Feasibility and Quotation Signature
+
+- Kept the supplied Agreement DOCX workflow unchanged.
+- Removed the reference-only yellow highlight, report date and site-layout row from the Feasibility PDF.
+- Feasibility EPC Number now contains only the numeric quotation serial (for example quotation `RE-RSS-PGVCL-2026038` prints EPC Number `38`).
+- Increased Feasibility table typography while retaining one clean A4 page.
+- Customer, consumer, premises, district, state, PIN, OEM, capacities, project cost, application reference, Jan Samarth ID and DISCOM ID are auto-filled and editable.
+- Existing Feasibility records can be corrected and re-downloaded after project creation without creating a duplicate project.
+- Added the official Ratneswar Engineering stamp/signature to every generated quotation PDF and browser preview.
+- Added migration `202607200016_editable_feasibility_and_quote_signature.sql` and `FINAL_V12_DEPLOYMENT.md`.
