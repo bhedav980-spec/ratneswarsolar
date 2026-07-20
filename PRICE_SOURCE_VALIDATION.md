@@ -1,19 +1,23 @@
-# Price Source Validation
+# Final Official Price Source Validation
 
-Authoritative source: `Price List_Residential_Solar_Rooftop(2).pdf`, dated 06.06.2026.
+Final verification date: 20/07/2026 (Asia/Kolkata)
 
-The production migration contains 97 exact source configurations:
+The active production price master is created by `202607200014_official_price_match_and_project_cleanup.sql` from these five supplied PDFs:
 
-- Bifacial 530–550 Wp: ADANI, WAAREE and APS; 4–18 panels (45 rows).
-- TOPCon PAHAL 600 Wp: 4–16 panels (13 rows).
-- TOPCon ADANI 605–620 Wp: 4–16 panels (13 rows).
-- TOPCon WAAREE 570–580 Wp: 4–16 panels (13 rows).
-- TOPCon APS 580 Wp: 4–16 panels (13 rows).
+- WAAREE Bifacial 540 Wp: 12 panel-count configurations.
+- WAAREE TOPCon 580 Wp: 11 panel-count configurations.
+- WAAREE TOPCon 610/615 Wp: 11 panel-count configurations.
+- ADANI Bifacial 550 Wp: 12 panel-count configurations.
+- ADANI TOPCon 610/615/620/625 Wp: 11 panel-count configurations.
 
-Every source-listed panel count, DC capacity and gross price is stored exactly as printed. The PDF lists ADANI TOPCon 12 panels as 7.440 kW at ₹300,820; this unusual value is deliberately preserved rather than guessed. The APS TOPCon heading says 580 Wp while its listed capacities progress as 2.4, 3.0, 3.6 kW and so on; both the 580 Wp label and the exact source capacities are preserved.
+Total: 57 verified GST-inclusive configurations.
 
-The quotation selector displays the source wattage range plus the exact panel-count/capacity configuration. Prices continue to be treated as GST-inclusive, so the quotation engine does not add GST again.
+The gross quotation price is always the PDF `Rate` or `Actual Customer Payable Amount`. `After Subsidy` is never used as the quotation price, and GST is never added again by the quotation engine.
 
-The source structure table and BOS quantities are also used for new quotation BOMs. Structure quantities exist for 4–17 panels; an 18-panel quotation keeps the structure as site-design-dependent because the source does not provide an 18-panel structure row.
+Combined wattage sources are exposed in 5 W steps only inside the printed source range: WAAREE 610/615 and ADANI 610/615/620/625. The same official quantity-row price applies to each wattage printed together in that source row. No price is interpolated between panel quantities.
 
-Automated checks fail deployment unless the migration contains exactly 97 active configurations.
+The user selects brand, technology, wattage and required kW. The application chooses the official panel quantity whose exact calculated capacity is closest to the requested kW. For example, 3.27 kW with a 540 Wp panel maps to 6 panels and an exact 3.240 kW capacity. The exact result is shown before saving.
+
+The source row ID and PDF filename are stored only inside the immutable audit snapshot. They are not a customer-facing quotation input or printed reference.
+
+Older 97-row migrations are retained for database history but their price lists are marked inactive by the final migration.

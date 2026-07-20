@@ -77,7 +77,7 @@ export async function loadSnapshot(): Promise<CrmSnapshot> {
     client.from('project_current').select('*').order('created_at', { ascending: false }),
     client.from('dealers').select('*').is('deleted_at', null).order('name'),
     client.from('inventory_balance').select('*'), client.from('payments').select('*').is('deleted_at', null),
-    client.from('expenses').select('*').is('deleted_at', null), client.from('customer_invoices').select('*').neq('status', 'cancelled'),
+    client.from('expenses').select('*').is('deleted_at', null), client.from('customer_invoices').select('*').order('issued_at',{ascending:false}),
     client.from('active_price_rows').select('*'), client.from('dealer_commissions').select('*'), optionalRows('dealer_commission_payments'), optionalRows('stock_transactions'),
     client.from('districts').select('*').eq('active', true).order('name'), optionalRows('audit_logs'), client.from('subsidy_rules').select('*').eq('active',true), client.from('tax_rules').select('*').eq('active',true), optionalRows('purchase_invoices'), optionalRows('company_settings'),
   ]);
@@ -228,5 +228,8 @@ export async function manageUser(action: 'set_active'|'reset_password'|'delete_u
 }
 export async function deleteProject(projectId:string,reason:string){
   const{error}=await requireClient().rpc('delete_erroneous_project',{p_project_id:projectId,p_reason:reason});throwIf(error);return loadSnapshot();
+}
+export async function cancelCustomerInvoice(invoiceId:string,reason:string){
+  const{error}=await requireClient().rpc('cancel_customer_invoice',{p_invoice_id:invoiceId,p_reason:reason});throwIf(error);return loadSnapshot();
 }
 export async function updateUserProfile(input:{userId:string;fullName:string;role:'admin'|'district_partner'|'dealer';districtId?:string|null;dealerId?:string|null}){const{data,error}=await requireClient().functions.invoke('admin-users',{body:{action:'update_profile',...input}});await throwFunctionError(error);return data;}

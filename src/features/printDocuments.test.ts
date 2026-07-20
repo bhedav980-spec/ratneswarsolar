@@ -37,5 +37,10 @@ describe('clean printable documents', () => {
     expect(invoice).toContain("line.lineType==='supply'");
     expect(invoiceEngine).toContain('line.gstRate/2');
     expect(invoiceEngine).toContain('splitLines.forEach');
+    expect(quotation).toContain('Total Subsidy');
+    expect(quotation).not.toContain('INFORMATIONAL ONLY');
+    expect(quotation).not.toContain('Subject to authority approval');
+    expect(quotationEngine).not.toContain('Total Informational Subsidy');
+    expect(quotationEngine).not.toContain('not deducted from this quotation value');
   });
 });

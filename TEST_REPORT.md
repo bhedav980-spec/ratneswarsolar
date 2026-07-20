@@ -1,11 +1,11 @@
-# Test Report — Final v9
+# Test Report — Final v10
 
 Final verification date: 20/07/2026 (Asia/Kolkata)
 
 - TypeScript typecheck: passed
 - ESLint with zero warnings: passed
-- Vitest: 9 files, 33 tests passed
-- Ordered SQL verification: 13 migrations, 34 required tables and security guards passed
+- Vitest: 11 files, 38 tests passed
+- Ordered SQL verification: 14 migrations, 34 required tables and security guards passed
 - Production Vite build: passed
 - Area Partner RLS hardened to `assigned_partner_id`; partners sharing an area do not automatically share customers
 - Password recovery now opens an in-app strong-password completion screen
@@ -17,7 +17,9 @@ Final verification date: 20/07/2026 (Asia/Kolkata)
 - Accepted quotation amount, tax treatment, line values and final invoice total are stored in the immutable snapshot
 - Supply/installation allocation shares must total 100%; both rates and HSN/SAC values are effective-dated and Admin-editable
 - One-time owner-authorised reset SQL supplied for quotations, projects and customer invoices
-- Automatic verified price selection with audited manual panel quantity, wattage and exact kW overrides
+- Internal official-price selection with audited manual panel quantity, wattage and exact kW overrides
+- All 57 rows from the five supplied official price PDFs validated, including WAAREE 540 and 5 W range options
+- Required-kW matching selects the nearest valid panel-count row without price interpolation
 - Optional editable loan gross-up formula and file charge with saved immutable commercial snapshot
 - Standard subsidy information printed on every quotation without changing the gross quotation value
 - Fixed dealer commission and manual dealer creation for Admin/Area Partner quotations
@@ -25,8 +27,8 @@ Final verification date: 20/07/2026 (Asia/Kolkata)
 
 Automated checks are run with `npm run typecheck`, `npm run lint`, `npm test`, `npm run verify:sql` and `npm run build`.
 
-Final local result on 20 July 2026: 33/33 tests passed; TypeScript, ESLint, SQL verification and the production Vite build completed successfully.
+Final local result on 20 July 2026: 38/38 tests passed; TypeScript, ESLint, SQL verification and the production Vite build completed successfully.
 
-Coverage includes capacity, GST-inclusive and GST-extra 70/30 calculations, line-level CGST/SGST, effective-dated subsidy eligibility, Indian amount words, editable settings/number previews, role permissions, valid/invalid project transitions, material reservation/shortage, the 97-row 06.06.2026 price source, wattage range preservation, exact two-page quotation PDF, one-page included/extra invoice PDFs and `.xlsx` workbook headings/totals. SQL tests inspect required tables, exact role enum, RLS, secured settings/material operations, private project access and duplicate guards.
+Coverage includes capacity, nearest official price-row matching, the final 57-row five-PDF source, GST-inclusive and GST-extra 70/30 calculations, line-level CGST/SGST, Indian amount words, editable settings/number previews, role permissions, valid/invalid project transitions, material reservation/shortage, audited invoice cancellation/project cleanup, exact two-page quotation PDF, one-page included/extra invoice PDFs and `.xlsx` workbook headings/totals. SQL tests inspect required tables, exact role enum, RLS, secured settings/material operations, private project access and duplicate guards.
 
 Production acceptance still requires a disposable connected Supabase project for `supabase test db`, role-by-role live RLS checks, Edge Function secrets, email confirmation/password reset delivery, AI provider calls, private file signed URLs and clean A4 quotation/invoice PDF verification. Record the project/date/results before go-live; do not represent an offline build as live-environment verification.

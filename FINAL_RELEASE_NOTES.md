@@ -9,7 +9,7 @@
 - Invoice generation remains available at every workflow stage after installation is completed.
 - Quotation and tax invoice layouts were rebuilt for A4 and produce a clean PDF containing only the selected document.
 - Customer rows now show an explicit **Delete** action for Admin and District Partner. It performs an audited soft delete so linked history is not destroyed.
-- The 06.06.2026 residential rooftop master price list adds all 97 source configurations and exact source wattage ranges.
+- The final active price master contains the 57 exact configurations read from the five supplied official PDFs; older source lists remain only as migration history and are inactive.
 - Quotation and invoice documents now follow the supplied `QuoteInvoiceTemplates.jsx` reference design while retaining clean A4 PDF generation.
 - Invitation and password-reset links now require the deployed HTTPS application URL and reject localhost.
 - Admin can create a verified login manually with a strong temporary password or send an email invitation.
@@ -46,4 +46,14 @@ For a new database, run `supabase/SETUP.sql`, then migrations `202607170006_resi
 - Made the reference subsidy table informational on every quotation; it never changes the quotation total.
 - Added existing-or-manual dealer selection with fixed commission amount and Dealer Master creation.
 - Replaced single-line manual stock entry with multi-material truck/receipt entry using quantity and total lot value.
-- Added migration `202607200013_manual_quote_loan_dealer_receipts.sql` and `FINAL_V9_DEPLOYMENT.md`.
+- Added migration `202607200013_manual_quote_loan_dealer_receipts.sql`.
+
+# Final v10 — Official Price Matching and Project Cleanup
+
+- Replaced the visible source-row selector with internal price matching by brand, technology, selected wattage and nearest valid panel quantity.
+- Published the verified 57-row active price set from WAAREE 540, WAAREE 580, WAAREE 610/615, ADANI 550 and ADANI 610/615/620/625 PDFs.
+- Added every verified 5 W option within combined source ranges without inventing prices or interpolating between quantity rows.
+- Removed “Informational” and the authority-approval note from the customer quotation subsidy section.
+- Added an audited Admin `Cancel Invoice` action and safe deletion of a cancelled invoice with its erroneous project.
+- Kept project cleanup accessible when the linked customer was already archived.
+- Added migration `202607200014_official_price_match_and_project_cleanup.sql` and `FINAL_V10_DEPLOYMENT.md`.

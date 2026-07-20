@@ -1439,7 +1439,7 @@ function CommercialSettings() {
         </form>
         <aside className="settings-note-card">
           <h3>Quotation Subsidy Information</h3>
-          <p>The standard subsidy information is printed on every customer quotation. It is informational only and never adds to or subtracts from the quotation total.</p>
+          <p>The standard subsidy table is printed separately on every customer quotation and never adds to or subtracts from the quotation total.</p>
           <strong>No subsidy rule setup is required.</strong>
         </aside>
       </div>

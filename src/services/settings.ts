@@ -26,7 +26,7 @@ export const defaultCrmSettings: CrmSettings = {
   quotationValidityDays: 15,
   paymentTerms: '10% advance at work order; 90% before material dispatch.',
   warrantyTerms: 'Five-year comprehensive system warranty; component warranties as provided by manufacturers.',
-  quotationNotes: 'Subsidy is informational, subject to eligibility, and credited directly to the customer.',
+  quotationNotes: 'Subsidy is credited directly to the eligible customer bank account.',
   defaultHsnSac: '8541 / 9954',
   footerText: 'This is a computer-generated document. Subject to Kutch jurisdiction.',
   inactivityMinutes: 30,

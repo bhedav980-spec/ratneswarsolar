@@ -15,6 +15,7 @@ interface CrmContextValue {
   updateInventoryItem: (value: Record<string, unknown>) => Promise<void>; archiveInventoryItem: (itemId: string, reason: string) => Promise<void>;
   saveProjectMaterials: (projectId: string, materials: MaterialRequirement[], reason: string) => Promise<void>;
   deleteProject: (projectId: string, reason: string) => Promise<void>;
+  cancelCustomerInvoice: (invoiceId: string, reason: string) => Promise<void>;
   saveSettings: (settings: CrmSettings) => Promise<void>;
 }
 
@@ -54,6 +55,7 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
     archiveInventoryItem: (id, reason) => run(async () => { await repo.archiveInventoryItem(id, reason); return repo.loadSnapshot(); }),
     saveProjectMaterials: (id, materials, reason) => run(async () => { await repo.saveProjectMaterials(id, materials, reason); return repo.loadSnapshot(); }),
     deleteProject: (id, reason) => run(() => repo.deleteProject(id, reason)),
+    cancelCustomerInvoice: (id, reason) => run(() => repo.cancelCustomerInvoice(id, reason)),
     saveSettings: (settings) => run(async () => { await repo.saveCrmSettings(settings); return repo.loadSnapshot(); }),
   }), [data, error, loading, refresh, run, saving]);
   return <CrmContext.Provider value={value}>{children}</CrmContext.Provider>;
