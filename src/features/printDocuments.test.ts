@@ -40,6 +40,8 @@ describe('clean printable documents', () => {
     expect(quotation).toContain('Total Subsidy');
     expect(quotation).not.toContain('INFORMATIONAL ONLY');
     expect(quotation).not.toContain('Subject to authority approval');
+    expect(quotation).not.toContain('Loan Commercials');
+    expect(quotationEngine).not.toContain('Loan Commercials');
     expect(quotationEngine).not.toContain('Total Informational Subsidy');
     expect(quotationEngine).not.toContain('not deducted from this quotation value');
   });
