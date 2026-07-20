@@ -36,7 +36,8 @@ const quote: Quotation = {
     { id: '3', description: 'Online Monitoring System', specification: 'Mobile App + Remote Monitoring', quantity: 1, unit: 'No', rate: 0, taxRate: 0, selected: true },
   ],
   basePrice: 200000, suggestedPrice: 200000, discount: 0, taxMode: 'inclusive', taxRate: 0, taxableValue: 184065.93,
-  taxAmount: 15934.07, roundOff: 0, grandTotal: 200000, subsidy: { eligible: true, central: 78000, state: 0, total: 78000 },
+  taxAmount: 15934.07, roundOff: 0, grandTotal: 224222, loanRequired: true, loanBasePrice: 200000, loanGrossUpPercent: 10, loanGrossUpAmount: 22222.22, loanFileCharge: 2000,
+  subsidy: { eligible: true, central: 78000, state: 0, total: 78000, informationalOnly: true, referenceLines: [{label:'Central Subsidy (Up to 2 kW)',amount:30000},{label:'Central Subsidy (Above 2 kW)',amount:18000},{label:'State Subsidy (Above 2 kW)',amount:30000},{label:'Agreement Charges',amount:350}] },
   paymentTerms: 'Advance payment; Balance before dispatch', warrantyTerms: 'As per OEM', validityDays: 15,
   createdAt: '2026-07-19T10:00:00+05:30', approvedAt: '2026-07-19T11:00:00+05:30', priceSnapshot: {},
 };

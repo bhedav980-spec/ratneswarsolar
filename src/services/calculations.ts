@@ -18,6 +18,32 @@ export function calculateDcCapacity(wattage: number, quantity: number): number {
   return Math.round(wattage * quantity) / 1000;
 }
 
+export function calculateLoanCustomerPrice(basePrice: number, grossUpPercent = 10, fileCharge = 2000) {
+  const safeBase = Math.max(0, Number(basePrice) || 0);
+  const safePercent = Math.min(99.99, Math.max(0, Number(grossUpPercent) || 0));
+  const safeCharge = Math.max(0, Number(fileCharge) || 0);
+  const financedEpcPrice = roundMoney(safeBase / (1 - safePercent / 100));
+  const grossUpAmount = roundMoney(financedEpcPrice - safeBase);
+  return { basePrice: roundMoney(safeBase), grossUpPercent: safePercent, financedEpcPrice, grossUpAmount, fileCharge: roundMoney(safeCharge), total: Math.round(financedEpcPrice + safeCharge) };
+}
+
+export function standardInformationalSubsidy(): SubsidyBreakdown {
+  return {
+    eligible: true,
+    central: 78000,
+    state: 0,
+    total: 78000,
+    informationalOnly: true,
+    ruleName: 'Standard quotation information',
+    referenceLines: [
+      { label: 'Central Subsidy (Up to 2 kW)', amount: 30000 },
+      { label: 'Central Subsidy (Above 2 kW)', amount: 18000 },
+      { label: 'State Subsidy (Above 2 kW)', amount: 30000 },
+      { label: 'Agreement Charges', amount: 350 },
+    ],
+  };
+}
+
 export function calculateQuote(input: QuoteCalculationInput) {
   const selectedExtras = input.extraItems
     .filter((item) => item.selected && !item.internalOnly)

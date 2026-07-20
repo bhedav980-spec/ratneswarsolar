@@ -36,3 +36,14 @@ For a new database, run `supabase/SETUP.sql`, then migrations `202607170006_resi
 - Added per-line CGST + SGST or IGST calculations, immutable quotation-base/treatment snapshots and matching UI/PDF totals.
 - Added single-page A4 vector PDF tests for both treatments.
 - Added migration `202607200012_invoice_gst_treatment_and_standard_split.sql` and a complete existing-production deployment guide.
+
+# Final v9 — Editable Quotations, Loan Pricing and Material Receipts
+
+- Added verified automatic pricing plus audited manual panel wattage, quantity and exact DC capacity edits.
+- Limited WAAREE source choices to the verified 540 Wp and 580 Wp categories.
+- Made inverter brand/model/capacity and every BOM row editable; Online Monitoring System wording is standardised.
+- Added optional editable loan pricing using `base / (1 - gross-up %) + file charge`, with defaults of 10% and ₹2,000.
+- Made the reference subsidy table informational on every quotation; it never changes the quotation total.
+- Added existing-or-manual dealer selection with fixed commission amount and Dealer Master creation.
+- Replaced single-line manual stock entry with multi-material truck/receipt entry using quantity and total lot value.
+- Added migration `202607200013_manual_quote_loan_dealer_receipts.sql` and `FINAL_V9_DEPLOYMENT.md`.

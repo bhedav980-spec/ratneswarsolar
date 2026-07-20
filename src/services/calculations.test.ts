@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { amountInWords, calculateDcCapacity, calculateQuote, calculateSplitGst, calculateSplitInclusiveGst, calculateSubsidy, calculateSubsidyFromRules, pendingBalance, reverseCalculateGst } from './calculations';
+import { amountInWords, calculateDcCapacity, calculateLoanCustomerPrice, calculateQuote, calculateSplitGst, calculateSplitInclusiveGst, calculateSubsidy, calculateSubsidyFromRules, pendingBalance, reverseCalculateGst, standardInformationalSubsidy } from './calculations';
 
 describe('solar quotation calculations', () => {
   it('calculates DC capacity from panel wattage and quantity', () => {
@@ -26,6 +26,10 @@ describe('solar quotation calculations', () => {
   });
 
   it('uses effective-dated subsidy rules without applying one to another category',()=>{const rules=[{id:'1',name:'Residential rule',customerCategory:'Residential' as const,effectiveFrom:'2026-01-01',minKw:0,maxKw:3,calculation:{upTo2Rate:30000,above2Rate:18000,capKw:3},active:true}];expect(calculateSubsidyFromRules('Residential',3,rules,new Date('2026-07-12')).total).toBe(78000);expect(calculateSubsidyFromRules('Commercial',3,rules,new Date('2026-07-12')).eligible).toBe(false);});
+
+  it('grosses up a loan quote and adds the editable file charge',()=>{const result=calculateLoanCustomerPrice(150000,10,2000);expect(result.financedEpcPrice).toBe(166666.67);expect(result.grossUpAmount).toBe(16666.67);expect(result.total).toBe(168667);});
+
+  it('keeps the standard subsidy informational and outside the quotation total',()=>{const subsidy=standardInformationalSubsidy();expect(subsidy.informationalOnly).toBe(true);expect(subsidy.total).toBe(78000);expect(subsidy.referenceLines).toHaveLength(4);});
 
   it('reverse-calculates invoice GST and preserves the accepted gross total',()=>{const tax=reverseCalculateGst(216667,12);expect(tax.taxableValue+tax.cgst+tax.sgst).toBe(216667);expect(tax.gross).toBe(216667);});
 

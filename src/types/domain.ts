@@ -97,6 +97,8 @@ export interface SubsidyBreakdown {
   state: number;
   total: number;
   ruleName?: string;
+  informationalOnly?: boolean;
+  referenceLines?: Array<{ label: string; amount: number }>;
 }
 
 export interface Quotation {
@@ -114,6 +116,8 @@ export interface Quotation {
   panelWattageLabel?: string;
   panelQuantity: number;
   dcCapacityKw: number;
+  configurationMode?: 'automatic' | 'manual';
+  configurationOverrideReason?: string;
   inverterBrand: string;
   inverterModel?: string;
   inverterCapacityKw: number;
@@ -129,8 +133,14 @@ export interface Quotation {
   taxAmount: number;
   roundOff: number;
   grandTotal: number;
+  loanRequired?: boolean;
+  loanBasePrice?: number;
+  loanGrossUpPercent?: number;
+  loanGrossUpAmount?: number;
+  loanFileCharge?: number;
   subsidy: SubsidyBreakdown;
   dealerId?: string | null;
+  manualDealerName?: string;
   dealerCommission?: number;
   internalCost?: number;
   paymentTerms: string;

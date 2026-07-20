@@ -1150,7 +1150,7 @@ function CommercialSettings() {
     <section className="card">
       <div className="card__title">
         <div>
-          <h2>Effective-Dated Tax and Subsidy Rules</h2>
+          <h2>Effective-Dated Invoice Tax Rules</h2>
           <p>
             GST values are editable. A new published rule is used by invoices
             dated on or after its effective date; issued invoices keep their
@@ -1335,6 +1335,8 @@ function CommercialSettings() {
           </button>
         </form>
         <form
+          style={{ display: "none" }}
+          aria-hidden="true"
           onSubmit={async (event) => {
             event.preventDefault();
             const { error } = await supabase!
@@ -1435,6 +1437,11 @@ function CommercialSettings() {
             <Save size={15} /> Publish Subsidy Rule
           </button>
         </form>
+        <aside className="settings-note-card">
+          <h3>Quotation Subsidy Information</h3>
+          <p>The standard subsidy information is printed on every customer quotation. It is informational only and never adds to or subtracts from the quotation total.</p>
+          <strong>No subsidy rule setup is required.</strong>
+        </aside>
       </div>
       <div className="table-card split-tax-rule-list">
         <table>
