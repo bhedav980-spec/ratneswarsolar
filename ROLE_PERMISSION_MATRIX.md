@@ -9,7 +9,8 @@
 | Price override | Reason required | Reason required | Reason required |
 | Approve/reject quotation | Yes | Assigned customers | No |
 | Internal copy/commission | Yes | Assigned customers | Hidden |
-| Approve quotation / create project | All | Assigned customers | No |
+| Generate editable Agreement DOCX | All | Assigned customers | No |
+| Generate Feasibility PDF / create project | All | Assigned customers | No |
 | Tax invoice generation/print | All | Assigned projects | No |
 | Inventory | Full | Scoped read/workflow | No |
 | Edit/archive inventory item master | Yes | No | No |

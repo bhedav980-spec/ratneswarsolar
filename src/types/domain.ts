@@ -155,6 +155,37 @@ export interface Quotation {
   priceSnapshot: Record<string, unknown>;
 }
 
+export interface AgreementRecord {
+  id: string;
+  agreementNo: string;
+  quotationId: string;
+  customerId: string;
+  projectId?: string | null;
+  agreementDate: string;
+  status: 'draft' | 'generated' | 'superseded';
+  generatedFilePath: string;
+  createdAt: string;
+}
+
+export interface FeasibilityInput {
+  applicationReferenceNumber: string;
+  janSamarthId?: string;
+  discomId?: string;
+}
+
+export interface FeasibilityReport extends FeasibilityInput {
+  id: string;
+  quotationId: string;
+  customerId: string;
+  agreementId: string;
+  projectId?: string | null;
+  reportDate: string;
+  appliedCapacityKw: number;
+  actualCapacityKw: number;
+  projectCost: number;
+  generatedAt: string;
+}
+
 export interface StageHistory {
   id: string;
   fromStage?: ProjectStage | null;
@@ -404,6 +435,8 @@ export interface CrmSnapshot {
   customers: Customer[];
   surveys: SiteSurvey[];
   quotations: Quotation[];
+  agreements: AgreementRecord[];
+  feasibilityReports: FeasibilityReport[];
   projects: Project[];
   dealers: Dealer[];
   inventory: InventoryItem[];

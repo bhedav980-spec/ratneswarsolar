@@ -33,6 +33,6 @@ Use the included `netlify.toml`, add the same three public variables, deploy, an
 
 ## Final verification
 
-Test Admin, Area Partner and Dealer in separate browser profiles. Verify email confirmation and password reset, customer-assignment/dealer isolation, exact pricing, quotation approval/project creation, duplicate project guard, project stages, commission overpayment guard, stock reservation/issue, serial uniqueness, invoice gross equality, private signed URLs, Excel exports and clean A4 PDF output for both quotation and invoice.
+Test Admin, Area Partner and Dealer in separate browser profiles. Verify email confirmation and password reset, customer-assignment/dealer isolation, exact pricing, Approved → Agreement DOCX → Feasibility PDF → Project Created, duplicate project guard, project stages, commission overpayment guard, stock reservation/issue, serial uniqueness, invoice gross equality, private signed URLs, Excel exports and clean A4 output for quotation, agreement, feasibility and invoice.
 
 For an existing v4 database, run `supabase/migrations/202607180008_area_partner_security_and_login_bootstrap.sql` once before testing. This changes partner access from broad territory access to assigned-customer access and maps the three supplied login emails when those Auth users exist.

@@ -3,8 +3,7 @@
 ## What changed
 
 - Mandatory authenticator/TOTP was removed. Sign-in now uses verified Supabase email/password, strong password policy, role-based RLS, active-account checks, audit events, password reset and 30-minute idle logout.
-- The Agreement module and all agreement-generation UI/code were removed.
-- Approving a sent or pending quotation now creates the project atomically.
+- Quotation approval no longer creates a project immediately. Final v11 requires an editable Agreement DOCX and the Vendor Feasibility Report first.
 - A dedicated Invoices module is visible to Admin and District Partner users.
 - Invoice generation remains available at every workflow stage after installation is completed.
 - Quotation and tax invoice layouts were rebuilt for A4 and produce a clean PDF containing only the selected document.
@@ -57,3 +56,14 @@ For a new database, run `supabase/SETUP.sql`, then migrations `202607170006_resi
 - Added an audited Admin `Cancel Invoice` action and safe deletion of a cancelled invoice with its erroneous project.
 - Kept project cleanup accessible when the linked customer was already archived.
 - Added migration `202607200014_official_price_match_and_project_cleanup.sql` and `FINAL_V10_DEPLOYMENT.md`.
+
+# Final v11 — Agreement and Feasibility Gate
+
+- Added the exact supplied Annexure-2 Word agreement as the production template.
+- Agreement generation replaces only the quotation date and customer name/address fields; the Ratneswar party details and authorised signature/stamp remain untouched.
+- Agreement output is editable `.docx` only, with the customer signature area intentionally blank.
+- Added a one-page selectable/vector A4 Vendor Feasibility PDF using the quotation date, customer details, consumer number, OEM, capacity and project cost.
+- Application Reference Number is mandatory; Jan Samarth ID and DISCOM ID remain optional and print as `__` when blank.
+- Enforced the workflow `Approved → Agreement DOCX → Feasibility PDF → Project Created` in secured database functions.
+- Added `feasibility_reports`, private DOCX storage support, audit events, RLS and migration `202607200015_agreement_feasibility_project_gate.sql`.
+- Added `FINAL_V11_DEPLOYMENT.md` with the exact existing-production upgrade sequence.

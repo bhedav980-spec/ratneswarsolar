@@ -1,6 +1,6 @@
 import type {
-  AuditLog, CommissionPayment, CrmSnapshot, Customer, Dealer, DealerCommission,
-  CrmSettings, District, Expense, InstallationDetails, Invoice, MaterialRequirement, Payment, ProjectStage, PurchaseInvoice, Quotation, SiteSurvey, StockTransaction, SubsidyRule, TaxRule,
+  AgreementRecord, AuditLog, CommissionPayment, CrmSnapshot, Customer, Dealer, DealerCommission,
+  CrmSettings, District, Expense, FeasibilityInput, FeasibilityReport, InstallationDetails, Invoice, MaterialRequirement, Payment, ProjectStage, PurchaseInvoice, Quotation, SiteSurvey, StockTransaction, SubsidyRule, TaxRule,
 } from '../types/domain';
 import { supabase } from '../lib/supabase';
 import { mergeCrmSettings } from './settings';
@@ -68,12 +68,14 @@ async function optionalRows(table: string, select = '*') {
 
 export async function loadSnapshot(): Promise<CrmSnapshot> {
   const client = requireClient();
-  const [profile, users, customers, surveys, quotes, projects, dealers, inventory, payments, expenses, invoices, prices, commissions, commissionPayments, stock, districts, audit, subsidy, tax, purchases, settingRows] = await Promise.all([
+  const [profile, users, customers, surveys, quotes, agreementRows, feasibilityRows, projects, dealers, inventory, payments, expenses, invoices, prices, commissions, commissionPayments, stock, districts, audit, subsidy, tax, purchases, settingRows] = await Promise.all([
     client.from('profile_current').select('*').single(),
     client.from('profiles').select('*,districts(name)').order('created_at',{ascending:false}),
     client.from('customers').select('*').is('archived_at', null).order('created_at', { ascending: false }),
     client.from('site_surveys').select('*').is('deleted_at', null),
     client.from('quotation_current').select('*').order('created_at', { ascending: false }),
+    optionalRows('agreements'),
+    optionalRows('feasibility_reports'),
     client.from('project_current').select('*').order('created_at', { ascending: false }),
     client.from('dealers').select('*').is('deleted_at', null).order('name'),
     client.from('inventory_balance').select('*'), client.from('payments').select('*').is('deleted_at', null),
@@ -88,7 +90,10 @@ export async function loadSnapshot(): Promise<CrmSnapshot> {
     profile: { id: p.id, fullName: p.full_name, role: p.role, districtId: p.district_id, districtName: p.district_name, dealerId: p.dealer_id, active: p.active, lastLoginAt: p.last_login_at },
     users: (users.data ?? []).map((u:any)=>({id:u.id,fullName:u.full_name,role:u.role,districtId:u.district_id,districtName:u.districts?.name,dealerId:u.dealer_id,active:u.active,lastLoginAt:u.last_login_at})),
     customers: (customers.data ?? []).map(mapCustomer), surveys: (surveys.data ?? []).map((r: any) => r.payload as SiteSurvey),
-    quotations: (quotes.data ?? []).map((r: any) => r.payload as Quotation), projects: (projects.data ?? []).map((r: any) => r.payload),
+    quotations: (quotes.data ?? []).map((r: any) => r.payload as Quotation),
+    agreements: (agreementRows as any[]).map((r): AgreementRecord => ({ id:r.id,agreementNo:r.agreement_no,quotationId:r.quotation_id,customerId:r.customer_id,projectId:r.project_id,agreementDate:r.agreement_date,status:r.status,generatedFilePath:r.generated_file_path,createdAt:r.created_at })),
+    feasibilityReports: (feasibilityRows as any[]).map((r): FeasibilityReport => ({ id:r.id,quotationId:r.quotation_id,customerId:r.customer_id,agreementId:r.agreement_id,projectId:r.project_id,reportDate:r.report_date,applicationReferenceNumber:r.application_reference_number,janSamarthId:r.jan_samarth_id,discomId:r.discom_id,appliedCapacityKw:Number(r.applied_capacity_kw),actualCapacityKw:Number(r.actual_capacity_kw),projectCost:Number(r.project_cost),generatedAt:r.generated_at })),
+    projects: (projects.data ?? []).map((r: any) => r.payload),
     dealers: (dealers.data ?? []).map((r: any) => ({ id: r.id, dealerNo: r.dealer_no, name: r.name, mobile: r.mobile, email: r.email, address: r.address, district: r.district_name, districtId: r.district_id, loginUserId: r.login_user_id, commissionType: r.default_commission_type, commissionValue: Number(r.default_commission_value), active: r.active })),
     inventory: (inventory.data ?? []).map((r: any) => ({ id: r.id, itemCode: r.item_code, itemName: r.item_name, category: r.category, brand: r.brand, model: r.model, specification: r.specification, warehouseDistrict: r.district_name, unit: r.unit, onHand: Number(r.on_hand), reserved: Number(r.reserved), available: Number(r.available), reorderLevel: Number(r.reorder_level), averageRate: Number(r.average_rate) })),
     payments: (payments.data ?? []).map((r: any) => r.payload as Payment), expenses: (expenses.data ?? []).map((r: any) => r.payload as Expense),
@@ -138,8 +143,11 @@ export async function saveQuotation(_snapshot: CrmSnapshot, quote: Quotation) {
 export async function setQuotationStatus(_snapshot: CrmSnapshot, quoteId: string, status: Quotation['status'], reason = '') {
   const { error } = await requireClient().rpc('set_quotation_status', { p_quotation_id: quoteId, p_status: status, p_reason: reason || null }); throwIf(error); return loadSnapshot();
 }
-export async function approveQuotationAndCreateProject(_snapshot: CrmSnapshot, quoteId: string) {
-  const { error } = await requireClient().rpc('approve_quotation_and_create_project', { p_quotation_id: quoteId }); throwIf(error); return loadSnapshot();
+export async function saveAgreementDocument(_snapshot: CrmSnapshot, quoteId: string, generatedFilePath: string) {
+  const { error } = await requireClient().rpc('save_agreement_document', { p_quotation_id: quoteId, p_generated_file_path: generatedFilePath }); throwIf(error); return loadSnapshot();
+}
+export async function saveFeasibilityAndCreateProject(_snapshot: CrmSnapshot, quoteId: string, input: FeasibilityInput) {
+  const { error } = await requireClient().rpc('save_feasibility_and_create_project', { p_quotation_id: quoteId, p_data: input }); throwIf(error); return loadSnapshot();
 }
 export async function changeProjectStage(_snapshot: CrmSnapshot, projectId: string, stage: ProjectStage, note: string, overrideReason = '') {
   const { error } = await requireClient().rpc('change_project_stage', { p_project_id: projectId, p_new_stage: stage, p_note: note || null, p_override_reason: overrideReason || null }); throwIf(error); return loadSnapshot();

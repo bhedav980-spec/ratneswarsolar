@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, Copy, Eye, FilePlus2, Plus, Send, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle2, Copy, Download, Eye, FileCheck2, FilePlus2, Plus, Send, Trash2, XCircle } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { Empty, Field, PageHeader, Status } from '../components/Ui';
 import { useCrm } from '../lib/CrmContext';
+import { agreementFilename, agreementMimeType, createAgreementDocx } from '../lib/agreementDocx';
+import { createFeasibilityPdf, downloadFeasibilityPdf } from '../lib/feasibilityPdf';
 import { calculateLoanCustomerPrice, calculateQuote, formatInr, standardInformationalSubsidy } from '../services/calculations';
 import { exactCapacityKw, resolveOfficialPriceRow, wattagesForPriceRows } from '../services/priceMatching';
-import type { Customer, Dealer, Quotation, QuoteItem } from '../types/domain';
+import { uploadPrivateFile } from '../services/repository';
+import type { Customer, Dealer, FeasibilityInput, Quotation, QuoteItem } from '../types/domain';
 import { QuotationPrint } from './QuotationPrint';
 
 const sourceStructure: Record<number, { pipe40: number; pipe60: number }> = {
@@ -36,27 +39,70 @@ const cleanQuotationNotes = (value: string) => value
   .trim();
 
 export function Quotations() {
-  const { data, saveQuotation, setQuotationStatus, approveQuotationAndCreateProject, saving } = useCrm();
-  const [editing, setEditing] = useState<Quotation | 'new' | null>(null); const [preview, setPreview] = useState<Quotation | null>(null); const [filter, setFilter] = useState('all');
+  const { data, saveQuotation, setQuotationStatus, saveAgreementDocument, saveFeasibilityAndCreateProject, saving } = useCrm();
+  const [editing, setEditing] = useState<Quotation | 'new' | null>(null); const [preview, setPreview] = useState<Quotation | null>(null); const [feasibilityQuote, setFeasibilityQuote] = useState<Quotation | null>(null); const [filter, setFilter] = useState('all');
+  const [documentBusy, setDocumentBusy] = useState(''); const [documentError, setDocumentError] = useState('');
   if (!data) return null;
   const list = filter === 'all' ? data.quotations : data.quotations.filter((q) => q.status === filter); const customer = (id: string) => data.customers.find((c) => c.id === id);
   const canApprove = data.profile.role !== 'dealer'; const statusTone = (s: string) => s === 'approved' || s === 'project_created' ? 'good' : s === 'rejected' ? 'bad' : ['sent','pending'].includes(s) ? 'warn' : 'neutral';
   const change = async (q: Quotation, status: Quotation['status']) => { const reason = status === 'rejected' ? window.prompt('Rejection reason (required)') ?? '' : ''; if (status === 'rejected' && !reason.trim()) return; await setQuotationStatus(q.id, status, reason); };
-  const approve = async (q: Quotation) => { if (!window.confirm(`Approve ${q.quoteNo} and create its project now?`)) return; await approveQuotationAndCreateProject(q.id); };
+  const approve = async (q: Quotation) => { if (!window.confirm(`Approve ${q.quoteNo}? The Agreement DOCX and Feasibility Report will be completed before its project is created.`)) return; await change(q, 'approved'); };
+  const downloadBlob = (blob: Blob, filename: string) => { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 60_000); };
+  const generateAgreement = async (q: Quotation) => {
+    const selectedCustomer = customer(q.customerId); if (!selectedCustomer) return;
+    setDocumentBusy(q.id); setDocumentError('');
+    try {
+      const blob = await createAgreementDocx(q, selectedCustomer); const filename = agreementFilename(q);
+      if (q.status === 'approved') {
+        const path = `${q.customerId}/${q.id}/${Date.now()}-${filename}`;
+        await uploadPrivateFile('agreement-files', path, new File([blob], filename, { type: agreementMimeType }));
+        await saveAgreementDocument(q.id, path);
+      }
+      downloadBlob(blob, filename);
+    } catch (cause) { setDocumentError(cause instanceof Error ? cause.message : 'Agreement generation failed.'); }
+    finally { setDocumentBusy(''); }
+  };
+  const generateFeasibility = async (q: Quotation, input: FeasibilityInput) => {
+    const selectedCustomer = customer(q.customerId); if (!selectedCustomer) return;
+    const pdf = await createFeasibilityPdf({ quotation:q,customer:selectedCustomer,feasibility:input });
+    await saveFeasibilityAndCreateProject(q.id, input);
+    pdf.save(`${q.quoteNo.replace(/[^A-Za-z0-9_-]+/g, '-')}-feasibility-report.pdf`);
+  };
   return <>
     <PageHeader title="Quotations" subtitle="Automatic source pricing with fully editable system configuration, BOM and commercial values." actions={<button className="btn btn--primary" onClick={() => setEditing('new')} disabled={!data.customers.length}><Plus size={17} /> New Quotation</button>} />
+    {documentError && <div className="alert alert--error">{documentError}</div>}
     <div className="toolbar"><select aria-label="Quotation status filter" value={filter} onChange={(e) => setFilter(e.target.value)}><option value="all">All statuses</option>{['draft','sent','pending','approved','rejected','project_created'].map((s) => <option key={s}>{s}</option>)}</select></div>
     <section className="card table-card">{list.length ? <table><thead><tr><th>Reference</th><th>Customer</th><th>System</th><th>Value</th><th>Status</th><th>Actions</th></tr></thead><tbody>{list.map((q) => <tr key={q.id}><td><strong>{q.quoteNo}</strong><small>Revision {q.versionNo}</small></td><td>{customer(q.customerId)?.fullName ?? 'Missing customer'}</td><td>{q.dcCapacityKw.toFixed(3)} kW<small>{q.panelBrand} {q.panelTechnology} · {q.panelWattageLabel ?? `${q.panelWattage} Wp`}</small></td><td><strong>{formatInr(q.grandTotal)}</strong><small>{q.loanRequired ? 'Loan quotation' : 'GST included'}</small></td><td><Status tone={statusTone(q.status)}>{q.status.replace('_',' ')}</Status></td><td><div className="row-actions">
       <button className="icon-btn" title="Preview" onClick={() => setPreview(q)}><Eye size={16} /></button>
       {q.status === 'draft' && <button className="icon-btn" title="Edit draft" onClick={() => setEditing(q)}><FilePlus2 size={16} /></button>}
       {q.status === 'draft' && <button className="icon-btn" title="Mark sent" onClick={() => void change(q, 'sent')}><Send size={16} /></button>}
-      {canApprove && ['sent','pending','approved'].includes(q.status) && <button className="icon-btn good" title="Approve and create project" onClick={() => void approve(q)}><CheckCircle2 size={16} /></button>}
+      {canApprove && ['sent','pending'].includes(q.status) && <button className="icon-btn good" title="Approve quotation" onClick={() => void approve(q)}><CheckCircle2 size={16} /></button>}
+      {canApprove && q.status === 'approved' && <button className="btn btn--small" disabled={documentBusy === q.id || saving} title={data.agreements.some((agreement) => agreement.quotationId === q.id) ? 'Download the editable Agreement DOCX again' : 'Generate editable Agreement DOCX'} onClick={() => void generateAgreement(q)}><Download size={14} /> Agreement DOCX</button>}
+      {canApprove && q.status === 'approved' && data.agreements.some((agreement) => agreement.quotationId === q.id) && <button className="btn btn--small btn--primary" title="Complete feasibility and create project" onClick={() => setFeasibilityQuote(q)}><FileCheck2 size={14} /> Feasibility</button>}
+      {canApprove && q.status === 'project_created' && data.agreements.some((agreement) => agreement.quotationId === q.id) && <button className="btn btn--small" disabled={documentBusy === q.id} title="Download editable Agreement DOCX" onClick={() => void generateAgreement(q)}><Download size={14} /> Agreement</button>}
+      {canApprove && q.status === 'project_created' && data.feasibilityReports.find((report) => report.quotationId === q.id) && <button className="btn btn--small" title="Download Feasibility PDF" onClick={() => { const selectedCustomer=customer(q.customerId); const report=data.feasibilityReports.find((value)=>value.quotationId===q.id); if(selectedCustomer&&report)void downloadFeasibilityPdf({quotation:q,customer:selectedCustomer,feasibility:report}); }}><FileCheck2 size={14} /> Feasibility</button>}
       {canApprove && !['rejected','project_created'].includes(q.status) && <button className="icon-btn bad" title="Reject" onClick={() => void change(q, 'rejected')}><XCircle size={16} /></button>}
       {!['draft','project_created'].includes(q.status) && <button className="icon-btn" title="Create revision" onClick={() => setEditing({ ...q, id: crypto.randomUUID(), versionNo: q.versionNo + 1, status: 'draft', createdAt: new Date().toISOString(), approvedAt: null, sentAt: null, rejectedAt: null })}><Copy size={16} /></button>}
     </div></td></tr>)}</tbody></table> : <Empty title="No quotations" detail="Create a quotation after adding a customer." />}</section>
     {editing && <QuoteForm initial={editing === 'new' ? undefined : editing} customers={data.customers} onClose={() => setEditing(null)} saving={saving} onSave={async (quote) => { await saveQuotation(quote); setEditing(null); }} />}
     {preview && customer(preview.customerId) && <QuotationPrint quote={preview} customer={customer(preview.customerId)!} onClose={() => setPreview(null)} />}
+    {feasibilityQuote && customer(feasibilityQuote.customerId) && <FeasibilityForm quotation={feasibilityQuote} customer={customer(feasibilityQuote.customerId)!} saving={saving} onClose={() => setFeasibilityQuote(null)} onGenerate={async(input)=>{await generateFeasibility(feasibilityQuote,input);setFeasibilityQuote(null);}} />}
   </>;
+}
+
+function FeasibilityForm({ quotation, customer, saving, onClose, onGenerate }: { quotation:Quotation;customer:Customer;saving:boolean;onClose:()=>void;onGenerate:(input:FeasibilityInput)=>Promise<void> }) {
+  const [applicationReferenceNumber,setApplicationReferenceNumber]=useState(''); const [janSamarthId,setJanSamarthId]=useState(''); const [discomId,setDiscomId]=useState(''); const [error,setError]=useState('');
+  return <Modal title="Vendor Feasibility Report" onClose={onClose} wide><form onSubmit={async(event)=>{event.preventDefault();if(!applicationReferenceNumber.trim()){setError('Application Reference Number is required.');return;}setError('');try{await onGenerate({applicationReferenceNumber:applicationReferenceNumber.trim(),janSamarthId:janSamarthId.trim(),discomId:discomId.trim()});}catch(cause){setError(cause instanceof Error?cause.message:'Feasibility generation failed.');}}}>
+    <section className="form-section"><div className="card__title"><div><h3>Auto-filled report details</h3><p>The quotation date is used for both the Agreement and Feasibility Report. Project creation happens only after this report is generated.</p></div></div><div className="form-grid">
+      <Field label="Customer"><input readOnly value={customer.fullName}/></Field><Field label="Consumer Number"><input readOnly value={customer.consumerNumber||'__'}/></Field>
+      <Field label="Address"><input readOnly value={[customer.address,customer.villageCity,customer.district,customer.pinCode].filter(Boolean).join(', ')}/></Field><Field label="Report Date"><input readOnly value={new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata'}).format(new Date(quotation.createdAt))}/></Field>
+      <Field label="Applied RTS Capacity"><input readOnly value={`${quotation.dcCapacityKw.toFixed(3)} kW`}/></Field><Field label="Actual RTS Capacity To Be Installed"><input readOnly value={`${quotation.dcCapacityKw.toFixed(3)} kW`}/></Field>
+      <Field label="Project Cost"><input readOnly value={formatInr(quotation.grandTotal)}/></Field><Field label="OEM Name"><input readOnly value={quotation.panelBrand}/></Field>
+      <Field label="Application Reference Number *"><input required value={applicationReferenceNumber} onChange={(event)=>setApplicationReferenceNumber(event.target.value)} placeholder="Enter application reference number"/></Field>
+      <Field label="Jan Samarth ID (optional)"><input value={janSamarthId} onChange={(event)=>setJanSamarthId(event.target.value)} placeholder="Blank prints as __"/></Field>
+      <Field label="DISCOM ID (optional/editable)"><input value={discomId} onChange={(event)=>setDiscomId(event.target.value)} placeholder="Blank prints as __"/></Field>
+    </div></section>{error&&<div className="alert alert--error">{error}</div>}<div className="modal__actions"><button type="button" className="btn" onClick={onClose}>Cancel</button><button className="btn btn--primary" disabled={saving}>{saving?'Creating project...':'Generate PDF & Create Project'}</button></div>
+  </form></Modal>;
 }
 
 function QuoteForm({ initial, customers, onClose, onSave, saving }: { initial?: Quotation; customers: Customer[]; onClose: () => void; onSave: (q: Quotation) => Promise<void>; saving: boolean }) {

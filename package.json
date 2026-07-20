@@ -1,7 +1,7 @@
 {
   "name": "ratneswar-solar-crm",
   "private": true,
-  "version": "10.0.0",
+  "version": "11.0.0",
   "type": "module",
   "scripts": {
     "build:setup-sql": "node scripts/build-setup-sql.mjs",
@@ -16,9 +16,11 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.52.0",
+    "@xmldom/xmldom": "^0.8.13",
     "html2canvas": "^1.4.1",
     "html2pdf.js": "^0.14.0",
     "jspdf": "^4.2.1",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.525.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

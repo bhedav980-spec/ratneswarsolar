@@ -1,16 +1,19 @@
-# Test Report — Final v10
+# Test Report — Final v11
 
 Final verification date: 20/07/2026 (Asia/Kolkata)
 
 - TypeScript typecheck: passed
 - ESLint with zero warnings: passed
-- Vitest: 11 files, 38 tests passed
-- Ordered SQL verification: 14 migrations, 34 required tables and security guards passed
+- Vitest: 12 files, 40 tests passed
+- Ordered SQL verification: 15 migrations, 35 required tables and security guards passed
 - Production Vite build: passed
 - Area Partner RLS hardened to `assigned_partner_id`; partners sharing an area do not automatically share customers
 - Password recovery now opens an in-app strong-password completion screen
 - Gemini server-side importer with optional OpenAI fallback
 - Exact two-page vector quotation PDF based on the supplied Word reference
+- Exact four-page editable Annexure-2 Agreement DOCX with customer signature area blank and vendor signature/stamp preserved
+- One-page selectable/vector Vendor Feasibility PDF with mandatory application reference and optional `__` fields
+- Database-enforced Approved → Agreement → Feasibility → Project workflow gate
 - Single-page vector tax invoice with separately configurable supply and installation GST lines
 - Invoice issuance supports `GST Included` reverse-calculation and `GST Extra` addition above the accepted quotation
 - Intrastate lines split independently into CGST and SGST; interstate lines use IGST
@@ -27,7 +30,7 @@ Final verification date: 20/07/2026 (Asia/Kolkata)
 
 Automated checks are run with `npm run typecheck`, `npm run lint`, `npm test`, `npm run verify:sql` and `npm run build`.
 
-Final local result on 20 July 2026: 38/38 tests passed; TypeScript, ESLint, SQL verification and the production Vite build completed successfully.
+Final local result on 20 July 2026: 40/40 tests passed; TypeScript, ESLint, SQL verification and the production Vite build completed successfully. The generated Agreement DOCX rendered as exactly four pages with no blank fifth page. The generated Feasibility PDF was verified as exactly one A4 page.
 
 Coverage includes capacity, nearest official price-row matching, the final 57-row five-PDF source, GST-inclusive and GST-extra 70/30 calculations, line-level CGST/SGST, Indian amount words, editable settings/number previews, role permissions, valid/invalid project transitions, material reservation/shortage, audited invoice cancellation/project cleanup, exact two-page quotation PDF, one-page included/extra invoice PDFs and `.xlsx` workbook headings/totals. SQL tests inspect required tables, exact role enum, RLS, secured settings/material operations, private project access and duplicate guards.
 

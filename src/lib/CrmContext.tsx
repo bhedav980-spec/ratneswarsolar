@@ -1,12 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import type { CommissionPayment, CrmSettings, Customer, Dealer, Expense, InstallationDetails, Invoice, MaterialRequirement, Payment, ProjectStage, Quotation, SiteSurvey, CrmSnapshot, StockTransaction } from '../types/domain';
+import type { CommissionPayment, CrmSettings, Customer, Dealer, Expense, FeasibilityInput, InstallationDetails, Invoice, MaterialRequirement, Payment, ProjectStage, Quotation, SiteSurvey, CrmSnapshot, StockTransaction } from '../types/domain';
 import * as repo from '../services/repository';
 
 interface CrmContextValue {
   data: CrmSnapshot | null; loading: boolean; saving: boolean; error: string; refresh: () => Promise<void>;
   saveCustomer: (value: Partial<Customer>) => Promise<void>; saveSurvey: (value: SiteSurvey) => Promise<void>;
   saveQuotation: (value: Quotation) => Promise<void>; setQuotationStatus: (quoteId: string, status: Quotation['status'], reason?: string) => Promise<void>;
-  approveQuotationAndCreateProject: (quoteId: string) => Promise<void>;
+  saveAgreementDocument: (quoteId: string, generatedFilePath: string) => Promise<void>;
+  saveFeasibilityAndCreateProject: (quoteId: string, input: FeasibilityInput) => Promise<void>;
   changeProjectStage: (projectId: string, stage: ProjectStage, note: string, overrideReason?: string) => Promise<void>;
   addDealer: (value: Dealer) => Promise<void>; addPayment: (value: Payment) => Promise<void>; addExpense: (value: Expense) => Promise<void>;
   issueInvoice: (value: Invoice) => Promise<void>; postStockTransaction: (value: StockTransaction) => Promise<void>;
@@ -44,7 +45,8 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
     data, loading, saving, error, refresh,
     saveCustomer: (v) => run((d) => repo.saveCustomer(d, v)), saveSurvey: (v) => run((d) => repo.saveSurvey(d, v)),
     saveQuotation: (v) => run((d) => repo.saveQuotation(d, v)), setQuotationStatus: (id, status, reason) => run((d) => repo.setQuotationStatus(d, id, status, reason)),
-    approveQuotationAndCreateProject: (id) => run((d) => repo.approveQuotationAndCreateProject(d, id)),
+    saveAgreementDocument: (id, path) => run((d) => repo.saveAgreementDocument(d, id, path)),
+    saveFeasibilityAndCreateProject: (id, input) => run((d) => repo.saveFeasibilityAndCreateProject(d, id, input)),
     changeProjectStage: (id, stage, note, override) => run((d) => repo.changeProjectStage(d, id, stage, note, override)),
     addDealer: (v) => run((d) => repo.addDealer(d, v)), addPayment: (v) => run((d) => repo.addPayment(d, v)),
     addExpense: (v) => run((d) => repo.addExpense(d, v)),
