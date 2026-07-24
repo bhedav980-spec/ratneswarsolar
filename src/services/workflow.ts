@@ -1,5 +1,22 @@
 import type { MaterialRequirement, ProjectStage, Quotation, StageHistory } from '../types/domain';
 
+export type SimplifiedProjectStage =
+  | 'quotation_documentation'
+  | 'loan_progress'
+  | 'material_dispatch'
+  | 'installation'
+  | 'inspection_meter'
+  | 'completed';
+
+export const simplifiedProjectStages: { id: SimplifiedProjectStage; label: string; shortLabel: string }[] = [
+  { id: 'quotation_documentation', label: 'Quotation & Documentation', shortLabel: 'Documents' },
+  { id: 'loan_progress', label: 'Loan Progress', shortLabel: 'Loan' },
+  { id: 'material_dispatch', label: 'Material & Dispatch', shortLabel: 'Material' },
+  { id: 'installation', label: 'Installation Completed', shortLabel: 'Installation' },
+  { id: 'inspection_meter', label: 'Inspection & Meter', shortLabel: 'Inspection' },
+  { id: 'completed', label: 'Project Completed', shortLabel: 'Completed' },
+];
+
 export const projectStages: { id: ProjectStage; label: string }[] = [
   { id: 'project_created', label: 'Project Created' }, { id: 'planning_done', label: 'Project Planning Done' },
   { id: 'loan_required', label: 'Loan Required' }, { id: 'loan_not_required', label: 'Loan Not Required' },
@@ -33,6 +50,60 @@ export function canTransition(from: ProjectStage, to: ProjectStage): boolean {
 }
 
 export function allowedNextStages(from: ProjectStage): ProjectStage[] { return transitions[from]; }
+
+const simplifiedStageMap: Record<ProjectStage, SimplifiedProjectStage> = {
+  project_created: 'quotation_documentation',
+  planning_done: 'quotation_documentation',
+  documentation_pending: 'quotation_documentation',
+  documentation_completed: 'quotation_documentation',
+  loan_required: 'loan_progress',
+  loan_application_pending: 'loan_progress',
+  loan_applied: 'loan_progress',
+  loan_sanctioned: 'loan_progress',
+  loan_rejected: 'loan_progress',
+  loan_not_required: 'material_dispatch',
+  material_requirement_generated: 'material_dispatch',
+  material_reserved: 'material_dispatch',
+  material_dispatched: 'material_dispatch',
+  installation_in_progress: 'installation',
+  installation_done: 'installation',
+  inspection_pending: 'inspection_meter',
+  inspection_done: 'inspection_meter',
+  meter_pending: 'inspection_meter',
+  meter_done: 'inspection_meter',
+  commissioning_done: 'inspection_meter',
+  subsidy_pending: 'inspection_meter',
+  subsidy_passed: 'inspection_meter',
+  handover_completed: 'inspection_meter',
+  project_closed: 'completed',
+};
+
+const simplifiedTransitions: Record<SimplifiedProjectStage, SimplifiedProjectStage[]> = {
+  quotation_documentation: ['loan_progress', 'material_dispatch'],
+  loan_progress: ['material_dispatch'],
+  material_dispatch: ['installation'],
+  installation: ['inspection_meter'],
+  inspection_meter: ['completed'],
+  completed: [],
+};
+
+export function simplifiedStageFor(stage: ProjectStage): SimplifiedProjectStage {
+  return simplifiedStageMap[stage];
+}
+
+export function simplifiedStageLabel(stage: ProjectStage | SimplifiedProjectStage): string {
+  const grouped = stage in simplifiedTransitions
+    ? stage as SimplifiedProjectStage
+    : simplifiedStageFor(stage as ProjectStage);
+  return simplifiedProjectStages.find((item) => item.id === grouped)?.label ?? grouped;
+}
+
+export function allowedNextSimplifiedStages(stage: ProjectStage | SimplifiedProjectStage): SimplifiedProjectStage[] {
+  const grouped = stage in simplifiedTransitions
+    ? stage as SimplifiedProjectStage
+    : simplifiedStageFor(stage as ProjectStage);
+  return simplifiedTransitions[grouped];
+}
 
 export function createStageHistory(fromStage: ProjectStage | null, toStage: ProjectStage, userId: string, note = ''): StageHistory {
   return {

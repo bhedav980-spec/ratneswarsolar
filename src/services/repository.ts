@@ -1,9 +1,10 @@
 import type {
   AgreementRecord, AuditLog, CommissionPayment, CrmSnapshot, Customer, Dealer, DealerCommission,
-  CrmSettings, District, Expense, FeasibilityInput, FeasibilityReport, InstallationDetails, Invoice, MaterialRequirement, Payment, ProjectStage, PurchaseInvoice, Quotation, SiteSurvey, StockTransaction, SubsidyRule, TaxRule,
+  CrmSettings, District, Expense, FeasibilityInput, FeasibilityReport, InstallationDetails, Invoice, ManualInvoiceRecord, MaterialRequirement, Payment, PurchaseInvoice, Quotation, SiteSurvey, StockTransaction, SubsidyRule, TaxRule,
 } from '../types/domain';
 import { supabase } from '../lib/supabase';
 import { mergeCrmSettings } from './settings';
+import type { SimplifiedProjectStage } from './workflow';
 
 const requireClient = () => {
   if (!supabase) throw new Error('Supabase is not configured.');
@@ -68,7 +69,7 @@ async function optionalRows(table: string, select = '*') {
 
 export async function loadSnapshot(): Promise<CrmSnapshot> {
   const client = requireClient();
-  const [profile, users, customers, surveys, quotes, agreementRows, feasibilityRows, projects, dealers, inventory, payments, expenses, invoices, prices, commissions, commissionPayments, stock, districts, audit, subsidy, tax, purchases, settingRows] = await Promise.all([
+  const [profile, users, customers, surveys, quotes, agreementRows, feasibilityRows, projects, dealers, inventory, payments, expenses, invoices, manualInvoiceRows, prices, commissions, commissionPayments, stock, districts, audit, subsidy, tax, purchases, settingRows] = await Promise.all([
     client.from('profile_current').select('*').single(),
     client.from('profiles').select('*,districts(name)').order('created_at',{ascending:false}),
     client.from('customers').select('*').is('archived_at', null).order('created_at', { ascending: false }),
@@ -80,6 +81,7 @@ export async function loadSnapshot(): Promise<CrmSnapshot> {
     client.from('dealers').select('*').is('deleted_at', null).order('name'),
     client.from('inventory_balance').select('*'), client.from('payments').select('*').is('deleted_at', null),
     client.from('expenses').select('*').is('deleted_at', null), client.from('customer_invoices').select('*').order('issued_at',{ascending:false}),
+    optionalRows('manual_invoices'),
     client.from('active_price_rows').select('*'), client.from('dealer_commissions').select('*'), optionalRows('dealer_commission_payments'), optionalRows('stock_transactions'),
     client.from('districts').select('*').eq('active', true).order('name'), optionalRows('audit_logs'), client.from('subsidy_rules').select('*').eq('active',true), client.from('tax_rules').select('*').eq('active',true), optionalRows('purchase_invoices'), optionalRows('company_settings'),
   ]);
@@ -105,6 +107,12 @@ export async function loadSnapshot(): Promise<CrmSnapshot> {
     inventory: (inventory.data ?? []).map((r: any) => ({ id: r.id, itemCode: r.item_code, itemName: r.item_name, category: r.category, brand: r.brand, model: r.model, specification: r.specification, warehouseDistrict: r.district_name, unit: r.unit, onHand: Number(r.on_hand), reserved: Number(r.reserved), available: Number(r.available), reorderLevel: Number(r.reorder_level), averageRate: Number(r.average_rate) })),
     payments: (payments.data ?? []).map((r: any) => r.payload as Payment), expenses: (expenses.data ?? []).map((r: any) => r.payload as Expense),
     invoices: (invoices.data ?? []).map((r: any) => r.snapshot as Invoice),
+    manualInvoices: (manualInvoiceRows as any[]).map((r): ManualInvoiceRecord => ({
+      id:r.id,invoiceNo:r.invoice_no,legacyQuoteNo:r.legacy_quote_no,invoiceDate:r.invoice_date,
+      customerName:r.customer_name,mobile:r.mobile,district:r.district_name,consumerNumber:r.consumer_number,
+      capacityKw:Number(r.capacity_kw),grandTotal:Number(r.grand_total),status:r.status,snapshot:r.snapshot,
+      createdAt:r.created_at,cancelledAt:r.cancelled_at,cancellationReason:r.cancellation_reason,
+    })),
     priceRows: (prices.data ?? []).map((r: any) => ({ id: r.id, panelTechnology: r.panel_technology, panelBrand: r.panel_brand, panelWattage: Number(r.panel_wattage), panelWattageMin: r.panel_wattage_min == null ? undefined : Number(r.panel_wattage_min), panelWattageMax: r.panel_wattage_max == null ? undefined : Number(r.panel_wattage_max), panelWattageLabel: r.panel_wattage_label ?? `${r.panel_wattage} Wp`, panelQuantity: r.panel_quantity, capacityKw: Number(r.dc_capacity_kw), price: Number(r.gross_price), expectedSubsidy: r.expected_subsidy == null ? undefined : Number(r.expected_subsidy), afterSubsidy: r.after_subsidy == null ? undefined : Number(r.after_subsidy), effectiveFrom: r.effective_from, versionNo: r.version_no, sourceDocument: r.source_document, active: r.active })),
     commissions: (commissions.data ?? []).map((r: any): DealerCommission => ({ id: r.id, dealerId: r.dealer_id, customerId: r.customer_id, projectId: r.project_id, quotationId: r.quotation_id, totalCommission: Number(r.total_commission), amountPaid: Number(r.amount_paid), status: r.status, payments: paymentRows.filter((x) => x.commission_id === r.id).map((x): CommissionPayment => ({ id: x.id, commissionId: x.commission_id, paymentDate: x.payment_date, amount: Number(x.amount), mode: x.mode, referenceNo: x.reference_no, notes: x.notes, createdAt: x.created_at })), createdAt: r.created_at })),
     stockTransactions: (stock as any[]).map((r): StockTransaction => ({ id: r.id, inventoryItemId: r.inventory_item_id, projectId: r.project_id, transactionType: r.transaction_type, quantity: Number(r.quantity), unitRate: r.unit_rate == null ? undefined : Number(r.unit_rate), referenceNo: r.reference_no, reason: r.reason, idempotencyKey: r.idempotency_key, occurredAt: r.occurred_at })),
@@ -159,8 +167,8 @@ export async function saveFeasibilityAndCreateProject(_snapshot: CrmSnapshot, qu
 export async function updateFeasibilityReport(_snapshot: CrmSnapshot, quoteId: string, input: FeasibilityInput) {
   const { error } = await requireClient().rpc('update_feasibility_report', { p_quotation_id: quoteId, p_data: input }); throwIf(error); return loadSnapshot();
 }
-export async function changeProjectStage(_snapshot: CrmSnapshot, projectId: string, stage: ProjectStage, note: string, overrideReason = '') {
-  const { error } = await requireClient().rpc('change_project_stage', { p_project_id: projectId, p_new_stage: stage, p_note: note || null, p_override_reason: overrideReason || null }); throwIf(error); return loadSnapshot();
+export async function changeProjectStage(_snapshot: CrmSnapshot, projectId: string, stage: SimplifiedProjectStage, note: string, overrideReason = '') {
+  const { error } = await requireClient().rpc('change_project_stage_grouped', { p_project_id: projectId, p_group: stage, p_note: note || null, p_override_reason: overrideReason || null }); throwIf(error); return loadSnapshot();
 }
 export async function addDealer(_snapshot: CrmSnapshot, dealer: Dealer) {
   const { error } = await requireClient().rpc('save_dealer', { p_dealer: dealer }); throwIf(error); return loadSnapshot();
@@ -176,6 +184,12 @@ export async function issueInvoice(_snapshot: CrmSnapshot, invoice: Invoice) {
 }
 export async function saveInstallationAndIssueInvoice(_snapshot: CrmSnapshot, projectId: string, details: InstallationDetails) {
   const { error } = await requireClient().rpc('save_installation_and_issue_invoice', { p_project_id: projectId, p_details: details }); throwIf(error); return loadSnapshot();
+}
+export async function saveManualInvoice(_snapshot: CrmSnapshot, invoice: ManualInvoiceRecord) {
+  const { error } = await requireClient().rpc('save_manual_invoice', { p_invoice: invoice }); throwIf(error); return loadSnapshot();
+}
+export async function cancelManualInvoice(_snapshot: CrmSnapshot, invoiceId: string, reason: string) {
+  const { error } = await requireClient().rpc('cancel_manual_invoice', { p_invoice_id: invoiceId, p_reason: reason }); throwIf(error); return loadSnapshot();
 }
 export async function postStockTransaction(_snapshot: CrmSnapshot, transaction: StockTransaction) {
   const { error } = await requireClient().rpc('post_stock_transaction', { p_transaction: transaction }); throwIf(error); return loadSnapshot();

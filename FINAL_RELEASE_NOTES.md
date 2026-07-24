@@ -78,3 +78,25 @@ For a new database, run `supabase/SETUP.sql`, then migrations `202607170006_resi
 - Existing Feasibility records can be corrected and re-downloaded after project creation without creating a duplicate project.
 - Added the official Ratneswar Engineering stamp/signature to every generated quotation PDF and browser preview.
 - Added migration `202607200016_editable_feasibility_and_quote_signature.sql` and `FINAL_V12_DEPLOYMENT.md`.
+
+# Final v13 — Quote-linked Bill Numbers and Manual Invoices
+
+- A project invoice now reuses the accepted quotation's numeric serial. For example, quotation serial `38` becomes Bill No. `RE/BILL/26-27/0038`.
+- The Bill reference uses a separate financial-year format so it remains a proper invoice reference instead of exposing the quotation format.
+- Added an Admin-only Manual Invoice generator for older quotations prepared outside the CRM, including serials 1–36.
+- Manual invoices capture customer, address, consumer, system, panel, inverter, serial-number, amount and GST-treatment details.
+- Manual invoices use the same effective-dated 70/30 GST engine and the same selectable-text A4 invoice renderer as project invoices.
+- Added a persistent Manual Invoice Register with view, print, cancellation, audit logging and Excel report inclusion.
+- Removed the Site Survey button, form, heading and `Survey Scheduled` option from the active Customer workflow.
+- Added migration `202607230017_quote_linked_and_manual_invoices.sql` and `FINAL_V13_DEPLOYMENT.md`.
+
+# Final v14 — Operations Pro Compact and Six-Stage Projects
+
+- Replaced the long visible project workflow with six practical stages: Quotation & Documentation, Loan Progress, Material & Dispatch, Installation Completed, Inspection & Meter and Project Completed.
+- Loan Progress is optional; no-loan projects move directly from documentation to material and dispatch.
+- Kept the original detailed database enum and old project history intact. Existing records are safely mapped to the compact stages instead of being reset or deleted.
+- Added a secured grouped-stage database function with Area Partner scoping, Admin override reasons, audit logging and idempotent stock issue at Material & Dispatch.
+- Consolidated old detailed stage history into the six business labels in project cards, project details and dashboards.
+- Applied the selected Operations Pro Compact design: high-contrast navigation, tighter spacing, compact metric tiles, six-stage delivery pipeline, recent-project table and actionable alerts.
+- Dashboard quick actions navigate to real Customer, Quotation, Project and Inventory modules; no decorative controls were added.
+- Added migration `202607240018_compact_project_workflow.sql` and `FINAL_V14_DEPLOYMENT.md`.

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import type { CommissionPayment, CrmSettings, Customer, Dealer, Expense, FeasibilityInput, InstallationDetails, Invoice, MaterialRequirement, Payment, ProjectStage, Quotation, SiteSurvey, CrmSnapshot, StockTransaction } from '../types/domain';
+import type { CommissionPayment, CrmSettings, Customer, Dealer, Expense, FeasibilityInput, InstallationDetails, Invoice, ManualInvoiceRecord, MaterialRequirement, Payment, Quotation, SiteSurvey, CrmSnapshot, StockTransaction } from '../types/domain';
 import * as repo from '../services/repository';
+import type { SimplifiedProjectStage } from '../services/workflow';
 
 interface CrmContextValue {
   data: CrmSnapshot | null; loading: boolean; saving: boolean; error: string; refresh: () => Promise<void>;
@@ -9,10 +10,12 @@ interface CrmContextValue {
   saveAgreementDocument: (quoteId: string, generatedFilePath: string) => Promise<void>;
   saveFeasibilityAndCreateProject: (quoteId: string, input: FeasibilityInput) => Promise<void>;
   updateFeasibilityReport: (quoteId: string, input: FeasibilityInput) => Promise<void>;
-  changeProjectStage: (projectId: string, stage: ProjectStage, note: string, overrideReason?: string) => Promise<void>;
+  changeProjectStage: (projectId: string, stage: SimplifiedProjectStage, note: string, overrideReason?: string) => Promise<void>;
   addDealer: (value: Dealer) => Promise<void>; addPayment: (value: Payment) => Promise<void>; addExpense: (value: Expense) => Promise<void>;
   issueInvoice: (value: Invoice) => Promise<void>; postStockTransaction: (value: StockTransaction) => Promise<void>;
   saveInstallationAndIssueInvoice: (projectId: string, details: InstallationDetails) => Promise<void>;
+  saveManualInvoice: (invoice: ManualInvoiceRecord) => Promise<void>;
+  cancelManualInvoice: (invoiceId: string, reason: string) => Promise<void>;
   payCommission: (value: CommissionPayment) => Promise<void>; archiveCustomer: (customerId: string, reason: string) => Promise<void>;
   updateInventoryItem: (value: Record<string, unknown>) => Promise<void>; archiveInventoryItem: (itemId: string, reason: string) => Promise<void>;
   saveProjectMaterials: (projectId: string, materials: MaterialRequirement[], reason: string) => Promise<void>;
@@ -54,6 +57,8 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
     addExpense: (v) => run((d) => repo.addExpense(d, v)),
     issueInvoice: (v) => run((d) => repo.issueInvoice(d, v)), postStockTransaction: (v) => run((d) => repo.postStockTransaction(d, v)),
     saveInstallationAndIssueInvoice: (id, details) => run((d) => repo.saveInstallationAndIssueInvoice(d, id, details)),
+    saveManualInvoice: (invoice) => run((d) => repo.saveManualInvoice(d, invoice)),
+    cancelManualInvoice: (id, reason) => run((d) => repo.cancelManualInvoice(d, id, reason)),
     payCommission: (v) => run((d) => repo.payCommission(d, v)), archiveCustomer: (id, reason) => run((d) => repo.archiveCustomer(d, id, reason)),
     updateInventoryItem: (v) => run(async () => { await repo.updateInventoryItem(v); return repo.loadSnapshot(); }),
     archiveInventoryItem: (id, reason) => run(async () => { await repo.archiveInventoryItem(id, reason); return repo.loadSnapshot(); }),

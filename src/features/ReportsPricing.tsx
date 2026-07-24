@@ -47,7 +47,10 @@ function buildReports(data: NonNullable<ReturnType<typeof useCrm>['data']>): Rec
     'Inventory Transaction Report': data.stockTransactions.map((x) => ({ Date: x.occurredAt.slice(0,10), Item: data.inventory.find((i) => i.id === x.inventoryItemId)?.itemName ?? '', Type: x.transactionType, Quantity: x.quantity, Reference: x.referenceNo ?? '', Reason: x.reason ?? '' })),
     'Low Stock/Shortage Report': data.inventory.filter((x) => x.available <= x.reorderLevel).map((x) => ({ Item: x.itemName, District: x.warehouseDistrict ?? '', 'Available Quantity': x.available, 'Reorder Level': x.reorderLevel, Status: 'Low Stock' })),
     'Purchase Invoice Report': data.purchaseInvoices.map((x) => ({ 'Invoice Number': x.invoiceNumber, Vendor: x.vendorName, GSTIN: x.vendorGstin ?? '', Date: x.invoiceDate, Amount: x.grossTotal, 'Source File': x.storagePath ?? '', Status: 'Posted' })),
-    'Customer Invoice Report': data.invoices.map((x) => ({ Invoice: x.invoiceNo, Customer: customer(x.customerId)?.fullName ?? '', District: customer(x.customerId)?.district ?? '', Date: x.invoiceDate, Amount: x.grandTotal, Status: x.status })),
+    'Customer Invoice Report': [
+      ...data.invoices.map((x) => ({ Invoice: x.invoiceNo, 'Source Quotation': data.projects.find((project)=>project.id===x.projectId)?.acceptedQuoteSnapshot.quoteNo ?? '', Customer: customer(x.customerId)?.fullName ?? '', District: customer(x.customerId)?.district ?? '', Date: x.invoiceDate, Amount: x.grandTotal, Status: x.status, Source:'CRM Project' })),
+      ...data.manualInvoices.map((x) => ({ Invoice:x.invoiceNo,'Source Quotation':x.legacyQuoteNo,Customer:x.customerName,District:x.district,Date:x.invoiceDate,Amount:x.grandTotal,Status:x.status,Source:'Manual Invoice' })),
+    ],
     'Loan Status Report': projectRows.filter((x) => x.Stage.startsWith('loan_')), 'PGVCL Inspection Status Report': projectRows.filter((x) => x.Stage.includes('inspection')), 'Meter Installation Status Report': projectRows.filter((x) => x.Stage.includes('meter')), 'Subsidy Status Report': projectRows.filter((x) => x.Stage.includes('subsidy')),
     'User Activity/Audit Report': data.auditLogs.map((x) => ({ Date: x.createdAt.slice(0,10), Actor: x.actorName ?? '', Action: x.action, Entity: x.entityType, Reason: x.reason ?? '', Status: 'Recorded' })),
   };

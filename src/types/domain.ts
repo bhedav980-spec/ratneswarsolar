@@ -378,6 +378,28 @@ export interface Invoice {
   taxLines?: InvoiceTaxLine[];
 }
 
+export interface ManualInvoiceRecord {
+  id: string;
+  invoiceNo: string;
+  legacyQuoteNo: string;
+  invoiceDate: string;
+  customerName: string;
+  mobile?: string;
+  district: string;
+  consumerNumber?: string;
+  capacityKw: number;
+  grandTotal: number;
+  status: 'issued' | 'cancelled';
+  snapshot: {
+    invoice: Invoice;
+    customer: Customer;
+    project: Project;
+  };
+  createdAt: string;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
+}
+
 export interface PriceRow {
   id?: string;
   panelTechnology: 'Bifacial' | 'TOPCon';
@@ -453,6 +475,7 @@ export interface CrmSnapshot {
   payments: Payment[];
   expenses: Expense[];
   invoices: Invoice[];
+  manualInvoices: ManualInvoiceRecord[];
   priceRows: PriceRow[];
   commissions: DealerCommission[];
   stockTransactions: StockTransaction[];
