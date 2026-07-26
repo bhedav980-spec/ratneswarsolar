@@ -1,7 +1,7 @@
 import type { jsPDF } from 'jspdf';
 import invoiceFontBold from '../assets/fonts/DejaVuSans-Bold.ttf?inline';
 import invoiceFontRegular from '../assets/fonts/DejaVuSans.ttf?inline';
-import { amountInWords, formatDate, invoiceLineDescription } from '../services/calculations';
+import { amountInWords, balanceIntrastateTaxLines, formatDate, invoiceLineDescription, roundMoney } from '../services/calculations';
 import type { CrmSettings, Customer, Invoice, InvoiceTaxLine, Project } from '../types/domain';
 
 interface InvoicePdfInput {
@@ -39,7 +39,7 @@ function invoiceLines(input: InvoicePdfInput): InvoiceTaxLine[] {
   const { invoice, settings } = input;
   const totalTax = invoice.cgst + invoice.sgst + invoice.igst;
   const lines: InvoiceTaxLine[] = invoice.taxLines?.length ? invoice.taxLines : [{ lineType:'supply', description:invoiceLineDescription('supply'), hsnSac:settings.defaultHsnSac, sharePercent:100, gstRate:invoice.taxableValue>0?Number((totalTax/invoice.taxableValue*100).toFixed(3)):0, grossAmount:invoice.grandTotal, taxableValue:invoice.taxableValue, cgst:invoice.cgst, sgst:invoice.sgst, igst:invoice.igst }];
-  return lines.map((line) => ({ ...line, description: invoiceLineDescription(line.lineType) }));
+  return balanceIntrastateTaxLines(lines).map((line) => ({ ...line, description: invoiceLineDescription(line.lineType) }));
 }
 
 function wrapped(doc: jsPDF, text: string, maxWidth: number) {
@@ -115,7 +115,7 @@ function drawItems(doc: jsPDF, input: InvoicePdfInput, top: number, height: numb
   const materials = project.installationMaterials;
   const splitLines = invoiceLines(input);
   const x = 10.5; const width = 189; const headerH = 8; const totalH = 9; const bodyBottom = top + height - totalH;
-  const widths = [6, 108, 22, 19, 34];
+  const widths = [9, 105, 22, 19, 34];
   const positions = [x]; widths.forEach((w) => positions.push((positions.at(-1) ?? x) + w));
   doc.setLineWidth(.14); doc.rect(x, top, width, height);
   doc.setLineWidth(.11); doc.line(x, top + headerH, x + width, top + headerH);
@@ -129,10 +129,13 @@ function drawItems(doc: jsPDF, input: InvoicePdfInput, top: number, height: numb
   const usableHeight=bodyBottom-(top+headerH); const rowHeights=splitLines.length===1?[usableHeight]:[Math.min(35,usableHeight*.68),usableHeight-Math.min(35,usableHeight*.68)]; let rowTop=top+headerH;
   splitLines.forEach((line,index)=>{const rowHeight=rowHeights[index]??usableHeight/splitLines.length;const textY=rowTop+5;doc.setFont(PDF_FONT,'normal');doc.setFontSize(7.2);doc.text(String(index+1),positions[0]!+widths[0]!/2,textY,{align:'center'});let py=textY;doc.setFont(PDF_FONT,'bold');py=writeLines(doc,wrapped(doc,line.description,widths[1]!-5),positions[1]!+2.5,py,7.5,'bold',3.15);if(line.lineType==='supply'){py=writeLines(doc,wrapped(doc,`${quote.panelQuantity} x ${quote.panelWattageLabel??`${quote.panelWattage} Wp`} ${quote.panelBrand} ${quote.panelTechnology} PV modules`,widths[1]!-5),positions[1]!+2.5,py+.4,6.9,'italic',2.8);if(materials?.panelSerials.length){const serialText=materials.panelSerials.map((serial,serialIndex)=>`${serialIndex+1}. ${serial}`).join(', ');py=writeLines(doc,wrapped(doc,`Panel Serial Nos.: ${serialText}`,widths[1]!-5),positions[1]!+2.5,py+.4,6.3,'italic',2.5);}const inverterProduct=quote.inverterModel?`${quote.inverterBrand} ${quote.inverterModel}`:`${quote.inverterBrand} ${quote.inverterCapacityKw} kW`;writeLines(doc,wrapped(doc,`${inverterProduct} inverter${materials?.inverterSerial?` | Serial No.: ${materials.inverterSerial}`:''}`,widths[1]!-5),positions[1]!+2.5,py+.4,6.7,'italic',2.7);}doc.setFont(PDF_FONT,'normal');doc.setFontSize(7.2);doc.text(clean(line.hsnSac),positions[2]!+1.3,textY);doc.text('1',positions[3]!+widths[3]!/2,textY,{align:'center'});doc.setFont(PDF_FONT,'bold');doc.text(money(line.taxableValue),positions[4]!+widths[4]!-1.3,textY,{align:'right'});rowTop+=rowHeight;});
 
+  const displayCgst = roundMoney(splitLines.reduce((sum, line) => sum + line.cgst, 0));
+  const displaySgst = roundMoney(splitLines.reduce((sum, line) => sum + line.sgst, 0));
+  const displayIgst = roundMoney(splitLines.reduce((sum, line) => sum + line.igst, 0));
   const taxes: Array<[string,number]> = [];
-  if (invoice.cgst > 0) taxes.push(['CGST', invoice.cgst]);
-  if (invoice.sgst > 0) taxes.push(['SGST', invoice.sgst]);
-  if (invoice.igst > 0) taxes.push(['IGST', invoice.igst]);
+  if (displayCgst > 0) taxes.push(['CGST', displayCgst]);
+  if (displaySgst > 0) taxes.push(['SGST', displaySgst]);
+  if (displayIgst > 0) taxes.push(['IGST', displayIgst]);
   taxes.forEach(([label, amount], index) => {
     const ty = bodyBottom - (taxes.length - index) * 6 + 3.8;
     doc.setFont(PDF_FONT, 'bold'); doc.setFontSize(7.7); doc.text(label, positions[2]! - 2, ty, { align: 'right' }); doc.text(money(amount), positions[5]! - 1.3, ty, { align: 'right' });
@@ -141,7 +144,8 @@ function drawItems(doc: jsPDF, input: InvoicePdfInput, top: number, height: numb
 }
 
 function drawTaxSummary(doc: jsPDF, input: InvoicePdfInput, top: number) {
-  const { invoice } = input; const totalTax = invoice.cgst + invoice.sgst + invoice.igst; const splitLines=invoiceLines(input);
+  const { invoice } = input; const splitLines=invoiceLines(input);
+  const displayCgst=roundMoney(splitLines.reduce((sum,line)=>sum+line.cgst,0)); const displaySgst=roundMoney(splitLines.reduce((sum,line)=>sum+line.sgst,0)); const displayIgst=roundMoney(splitLines.reduce((sum,line)=>sum+line.igst,0)); const totalTax=roundMoney(displayCgst+displaySgst+displayIgst);
   const x = 10.5; const width = 189; const rowH=7; const headerH=8; const totalH=7; const height=headerH+rowH*splitLines.length+totalH;
   doc.setLineWidth(.22); doc.rect(x, top, width, height);
   if (invoice.igst > 0) {
@@ -152,19 +156,20 @@ function drawTaxSummary(doc: jsPDF, input: InvoicePdfInput, top: number) {
     const totalY=top+height-2.3;doc.setFont(PDF_FONT,'bold'); doc.text('Total',pos[0]!+widths[0]!-1,totalY,{align:'right'}); [money(invoice.taxableValue),'',money(invoice.igst),money(totalTax)].forEach((v,i)=>doc.text(clean(v),pos[i+1]!+widths[i+1]!-1,totalY,{align:'right'}));
     return;
   }
-  const widths=[50,28,12,24,12,24,39]; const pos=[x]; widths.forEach((w)=>pos.push((pos.at(-1)??x)+w)); pos.slice(1,-1).forEach((px)=>doc.line(px,top,px,top+height));
-  doc.line(x,top+headerH,x+width,top+headerH); doc.line(pos[2]!,top+3,pos[6]!,top+3); splitLines.forEach((_,index)=>doc.line(x,top+headerH+rowH*(index+1),x+width,top+headerH+rowH*(index+1)));
-  doc.setFont(PDF_FONT,'normal'); doc.setFontSize(6.8); doc.text('HSN/SAC',pos[0]!+widths[0]!/2,top+4,{align:'center'}); doc.text('Taxable Value',pos[1]!+widths[1]!/2,top+4,{align:'center'}); doc.text('CGST',pos[2]!+(widths[2]!+widths[3]!)/2,top+2.4,{align:'center'}); doc.text('SGST/UTGST',pos[4]!+(widths[4]!+widths[5]!)/2,top+2.4,{align:'center'}); doc.text('Total Tax Amount',pos[6]!+widths[6]!/2,top+4,{align:'center'});
-  ['Rate','Amount','Rate','Amount'].forEach((h,i)=>doc.text(h,pos[i+2]!+widths[i+2]!/2,top+5.3,{align:'center'}));
+  const widths=[50,28,12,24,12,24,39]; const pos=[x]; widths.forEach((w)=>pos.push((pos.at(-1)??x)+w));
+  doc.setLineWidth(.1); [pos[1]!,pos[2]!,pos[4]!,pos[6]!].forEach((px)=>doc.line(px,top,px,top+height)); [pos[3]!,pos[5]!].forEach((px)=>doc.line(px,top+3.6,px,top+height));
+  doc.line(x,top+headerH,x+width,top+headerH); doc.line(pos[2]!,top+3.6,pos[6]!,top+3.6); splitLines.forEach((_,index)=>doc.line(x,top+headerH+rowH*(index+1),x+width,top+headerH+rowH*(index+1)));
+  doc.setFont(PDF_FONT,'normal'); doc.setFontSize(6.8); doc.text('HSN/SAC',pos[0]!+widths[0]!/2,top+4.7,{align:'center'}); doc.text('Taxable Value',pos[1]!+widths[1]!/2,top+4.7,{align:'center'}); doc.text('CGST',pos[2]!+(widths[2]!+widths[3]!)/2,top+2.6,{align:'center'}); doc.text('SGST',pos[4]!+(widths[4]!+widths[5]!)/2,top+2.6,{align:'center'}); doc.text('Total Tax Amount',pos[6]!+widths[6]!/2,top+4.7,{align:'center'});
+  ['Rate','Amount','Rate','Amount'].forEach((h,i)=>doc.text(h,pos[i+2]!+widths[i+2]!/2,top+6.6,{align:'center'}));
   splitLines.forEach((line,index)=>{const y=top+headerH+rowH*index+4.8;const vals=[line.hsnSac,money(line.taxableValue),`${line.gstRate/2}%`,money(line.cgst),`${line.gstRate/2}%`,money(line.sgst),money(line.cgst+line.sgst)];vals.forEach((v,i)=>doc.text(clean(v),pos[i]!+widths[i]!-1,y,{align:'right'}));});
-  const totalY=top+height-2.3;doc.setFont(PDF_FONT,'bold'); doc.text('Total',pos[0]!+widths[0]!-1,totalY,{align:'right'}); [money(invoice.taxableValue),'',money(invoice.cgst),'',money(invoice.sgst),money(totalTax)].forEach((v,i)=>doc.text(clean(v),pos[i+1]!+widths[i+1]!-1,totalY,{align:'right'}));
+  const totalY=top+height-2.3;doc.setFont(PDF_FONT,'bold'); doc.text('Total',pos[0]!+widths[0]!-1,totalY,{align:'right'}); [money(invoice.taxableValue),'',money(displayCgst),'',money(displaySgst),money(totalTax)].forEach((v,i)=>doc.text(clean(v),pos[i+1]!+widths[i+1]!-1,totalY,{align:'right'}));
 }
 
 export async function createInvoicePdf(input: InvoicePdfInput) {
   const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
   installInvoiceFonts(doc);
-  const { invoice, project, customer, settings } = input; const company = settings.company; const bank = settings.bank; const totalTax = invoice.cgst + invoice.sgst + invoice.igst;
+  const { invoice, settings } = input; const company = settings.company; const bank = settings.bank; const displayLines=invoiceLines(input); const totalTax=roundMoney(displayLines.reduce((sum,line)=>sum+line.cgst+line.sgst+line.igst,0));
   doc.setTextColor(0,0,0); doc.setDrawColor(0,0,0); doc.setLineWidth(.22);
   doc.setFont(PDF_FONT,'bold'); doc.setFontSize(13); doc.text('Tax Invoice',105,10,{align:'center'}); doc.setFont(PDF_FONT,'italic'); doc.setFontSize(8.5); doc.text('(ORIGINAL FOR RECIPIENT)',197.5,10,{align:'right'});
   drawPartyAndMeta(doc,input,16,65); drawItems(doc,input,81,78);
@@ -177,7 +182,7 @@ export async function createInvoicePdf(input: InvoicePdfInput) {
   doc.setFont(PDF_FONT,'normal'); doc.setFontSize(7.5); doc.text("Company's PAN:",12,bottomTop+6); doc.setFont(PDF_FONT,'bold'); doc.text(clean(company.pan),36,bottomTop+6); doc.setFont(PDF_FONT,'normal'); doc.text('Declaration',12,bottomTop+38); doc.line(12,bottomTop+38.5,28,bottomTop+38.5); writeLines(doc,wrapped(doc,'We declare that this invoice shows the actual value of the goods and services described and that all particulars are true and correct.',half-4),12,bottomTop+42,7.2,'normal',3);
   doc.setFont(PDF_FONT,'normal'); doc.setFontSize(7.2); doc.text("Company's Bank Details",152.25,bottomTop+4,{align:'center'}); const bankLines=[`Bank Name: ${bank.bankName}`,`A/c No.: ${bank.accountNumber}`,`Branch & IFS Code: ${bank.branch} & ${bank.ifsc}`]; let bankY=bottomTop+9; bankLines.forEach((line)=>{ const [label,...rest]=line.split(':'); doc.setFont(PDF_FONT,'normal'); doc.text(`${label}:`,107,bankY); doc.setFont(PDF_FONT,'bold'); doc.text(clean(rest.join(':').trim()),132,bankY); bankY+=4; });
   doc.setFont(PDF_FONT,'bold'); doc.setFontSize(7.5); doc.text(clean(`for ${company.legalName}`),197.5,bottomTop+32,{align:'right'}); doc.text('Authorised Signatory',197.5,bottomTop+52,{align:'right'});
-  doc.setFont(PDF_FONT,'normal'); doc.setFontSize(7.8); doc.text(clean(`SUBJECT TO ${company.jurisdiction.toUpperCase()} JURISDICTION`),105,275,{align:'center'}); doc.setFontSize(7.3); doc.text('This is a Computer Generated Invoice',105,282,{align:'center'}); doc.setFontSize(6.6); doc.text(clean(`${invoice.invoiceNo} | ${project.projectNo} | ${customer.customerNo}`),105,288,{align:'center'});
+  doc.setFont(PDF_FONT,'normal'); doc.setFontSize(7.8); doc.text(clean(`SUBJECT TO ${company.jurisdiction.toUpperCase()} JURISDICTION`),105,276,{align:'center'}); doc.setFontSize(7.3); doc.text('This is a Computer Generated Invoice',105,284,{align:'center'});
   return doc;
 }
 

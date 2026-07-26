@@ -8,6 +8,9 @@
 - Simplified the main item table to Sl No., Particulars, HSN/SAC, Quantity and Amount; removed Rate, Per and `Job` text.
 - Retained only thin professional table rules and removed internal horizontal item-row separators.
 - Embedded a consistent document font so downloaded A4 invoices remain sharp, selectable and visually stable.
+- Removed the internal invoice/project/customer code line from the customer-facing footer.
+- Increased the Sl No. column width and corrected the tax-summary merged-header rules so no line crosses heading text.
+- Standardised the intrastate heading to `SGST` and balanced CGST/SGST paise allocation across tax lines.
 - No database migration or Edge Function deployment is required for this layout-only update.
 
 ## What changed

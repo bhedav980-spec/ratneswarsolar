@@ -356,7 +356,7 @@ textarea { min-height: 78px; resize: vertical; }
 .tally-items-table,.tally-tax-table,.tally-equipment-table { width:100%; border-collapse:collapse; table-layout:fixed; }
 .tally-items-table { flex:1 1 auto; min-height:78mm; border:.15mm solid #333; border-top:0; }
 .tally-items-table th,.tally-items-table td { padding:1mm; border-right:.1mm solid #555; color:#080808; background:#fff; vertical-align:top; }
-.tally-tax-table th,.tally-tax-table td,.tally-equipment-table th,.tally-equipment-table td { padding:1mm; border-right:.25mm solid #111; color:#080808; background:#fff; vertical-align:top; }
+.tally-tax-table th,.tally-tax-table td,.tally-equipment-table th,.tally-equipment-table td { padding:1mm; border-right:.1mm solid #444; color:#080808; background:#fff; vertical-align:top; }
 .tally-items-table th { height:8mm; border-bottom:.12mm solid #444; font-size:8pt; font-weight:400; text-align:center; }
 .tally-items-table th small { font-size:6.5pt; }
 .tally-items-table td { border-bottom:0; font-size:8pt; }
@@ -371,12 +371,12 @@ textarea { min-height: 78px; resize: vertical; }
 .tally-items-table .tally-tax-line td:nth-child(2) { text-align:right; }
 .tally-items-table tfoot td { padding:1.2mm; border-top:.15mm solid #333; font-size:9pt; font-weight:700; text-align:right; }
 .tally-items-table tfoot td:last-child { font-size:10.5pt; white-space:nowrap; }
-.tally-col-sl { width:6mm; }.tally-col-particulars { width:auto; }.tally-col-hsn { width:22mm; }.tally-col-qty { width:19mm; }.tally-col-amount { width:34mm; }
+.tally-col-sl { width:9mm; }.tally-col-particulars { width:auto; }.tally-col-hsn { width:22mm; }.tally-col-qty { width:19mm; }.tally-col-amount { width:34mm; }
 .tally-amount-words { min-height:13mm; padding:1mm; border:.3mm solid #111; border-top:0; }
 .tally-amount-words > div { display:flex; justify-content:space-between; }
 .tally-amount-words span,.tally-amount-words em { font-size:7.3pt; }.tally-amount-words > strong { display:block; margin-top:1.2mm; font-size:9.2pt; }
-.tally-tax-table { border:.3mm solid #111; border-top:0; }
-.tally-tax-table th,.tally-tax-table td { padding:.75mm 1mm; border-bottom:.25mm solid #111; font-size:7.5pt; text-align:right; }
+.tally-tax-table { border:.15mm solid #333; border-top:0; }
+.tally-tax-table th,.tally-tax-table td { padding:.75mm 1mm; border-bottom:.1mm solid #444; font-size:7.5pt; text-align:right; }
 .tally-tax-table th:first-child,.tally-tax-table td:first-child { text-align:left; }
 .tally-tax-table th { text-transform:none; letter-spacing:0; font-weight:400; text-align:center; }
 .tally-tax-table tfoot td { font-weight:700; }

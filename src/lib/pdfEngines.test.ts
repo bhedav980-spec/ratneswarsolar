@@ -56,11 +56,11 @@ const project: Project = {
 const invoice: Invoice = {
   id: 'invoice-1', invoiceNo: 'RE-INV-20260001', customerId: customer.id, projectId: project.id,
   invoiceDate: '2026-07-19', placeOfSupply: 'Gujarat (24)', status: 'issued', taxMode: 'inclusive',
-  quotedAmount: 200000, taxableValue: 184180.79, cgst: 7909.61, sgst: 7909.60, igst: 0, roundOff: 0, grandTotal: 200000,
+  quotedAmount: 160000, taxableValue: 147344.64, cgst: 6327.68, sgst: 6327.68, igst: 0, roundOff: 0, grandTotal: 160000,
   taxRuleName: 'Solar EPC 70/30 - Supply 5% / Installation 18%',
   taxLines: [
-    { lineType: 'supply', description: 'Solar Rooftop Power Generation System (PV Modules and Inverter)', hsnSac: '854140', sharePercent: 70, gstRate: 5, grossAmount: 140000, taxableValue: 133333.33, cgst: 3333.34, sgst: 3333.33, igst: 0 },
-    { lineType: 'installation', description: 'Mounting Structure and Balance of System (BOS) Materials for Solar Installation', hsnSac: '995442', sharePercent: 30, gstRate: 18, grossAmount: 60000, taxableValue: 50847.46, cgst: 4576.27, sgst: 4576.27, igst: 0 },
+    { lineType: 'supply', description: 'Solar Rooftop Power Generation System (PV Modules and Inverter)', hsnSac: '854140', sharePercent: 70, gstRate: 5, grossAmount: 112000, taxableValue: 106666.67, cgst: 2666.67, sgst: 2666.66, igst: 0 },
+    { lineType: 'installation', description: 'Mounting Structure and Balance of System (BOS) Materials for Solar Installation', hsnSac: '995442', sharePercent: 30, gstRate: 18, grossAmount: 48000, taxableValue: 40677.97, cgst: 3661.01, sgst: 3661.02, igst: 0 },
   ],
 };
 

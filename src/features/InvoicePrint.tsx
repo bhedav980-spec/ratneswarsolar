@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Download, Printer } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { openVectorInvoicePdf, downloadVectorInvoicePdf } from '../lib/invoicePdf';
-import { amountInWords, formatDate, formatInr, invoiceLineDescription } from '../services/calculations';
+import { amountInWords, balanceIntrastateTaxLines, formatDate, formatInr, invoiceLineDescription, roundMoney } from '../services/calculations';
 import type { Customer, Invoice, InvoiceTaxLine, Project } from '../types/domain';
 import { useCrm } from '../lib/CrmContext';
 
@@ -16,9 +16,13 @@ export function InvoicePrint({ invoice, project, customer, onClose }: { invoice:
   const documentId = `invoice-document-${invoice.id.replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const filename = `${invoice.invoiceNo.replace(/[^a-zA-Z0-9_-]/g, '-')}-tax-invoice.pdf`;
   const wattageLabel = quote.panelWattageLabel ?? `${quote.panelWattage} Wp`;
-  const totalTax = invoice.cgst + invoice.sgst + invoice.igst;
-  const storedTaxLines: InvoiceTaxLine[] = invoice.taxLines?.length ? invoice.taxLines : [{ lineType:'supply', description:invoiceLineDescription('supply'), hsnSac:data!.settings.defaultHsnSac, sharePercent:100, gstRate:invoice.taxableValue>0?Number((totalTax/invoice.taxableValue*100).toFixed(3)):0, grossAmount:invoice.grandTotal, taxableValue:invoice.taxableValue, cgst:invoice.cgst, sgst:invoice.sgst, igst:invoice.igst }];
-  const taxLines = storedTaxLines.map((line) => ({ ...line, description: invoiceLineDescription(line.lineType) }));
+  const storedTotalTax = invoice.cgst + invoice.sgst + invoice.igst;
+  const storedTaxLines: InvoiceTaxLine[] = invoice.taxLines?.length ? invoice.taxLines : [{ lineType:'supply', description:invoiceLineDescription('supply'), hsnSac:data!.settings.defaultHsnSac, sharePercent:100, gstRate:invoice.taxableValue>0?Number((storedTotalTax/invoice.taxableValue*100).toFixed(3)):0, grossAmount:invoice.grandTotal, taxableValue:invoice.taxableValue, cgst:invoice.cgst, sgst:invoice.sgst, igst:invoice.igst }];
+  const taxLines = balanceIntrastateTaxLines(storedTaxLines).map((line) => ({ ...line, description: invoiceLineDescription(line.lineType) }));
+  const displayCgst = roundMoney(taxLines.reduce((sum, line) => sum + line.cgst, 0));
+  const displaySgst = roundMoney(taxLines.reduce((sum, line) => sum + line.sgst, 0));
+  const displayIgst = roundMoney(taxLines.reduce((sum, line) => sum + line.igst, 0));
+  const totalTax = roundMoney(displayCgst + displaySgst + displayIgst);
   const approvedDate = quote.approvedAt ? formatDate(quote.approvedAt) : '-';
   const pdfInput = { invoice, project, customer, settings: data!.settings };
 
@@ -75,16 +79,16 @@ export function InvoicePrint({ invoice, project, customer, onClose }: { invoice:
           <colgroup><col className="tally-col-sl"/><col className="tally-col-particulars"/><col className="tally-col-hsn"/><col className="tally-col-qty"/><col className="tally-col-amount"/></colgroup>
           <thead><tr><th>Sl<br/><small>No.</small></th><th>Particulars</th><th>HSN/SAC</th><th>Quantity</th><th>Amount</th></tr></thead>
           <tbody>{taxLines.map((line,index)=><tr className="tally-main-item tally-split-item" key={line.lineType}><td>{index+1}</td><td><strong>{line.description}</strong>{line.lineType==='supply'&&<><span>{quote.panelQuantity} x {wattageLabel} {quote.panelBrand} {quote.panelTechnology} PV modules</span>{materials?.panelSerials.length?<span className="tally-panel-serials"><b>Panel Serial Nos.:</b> {materials.panelSerials.map((serial,serialIndex)=>`${serialIndex+1}. ${serial}`).join(', ')}</span>:null}<span>{quote.inverterBrand} {quote.inverterModel||''} {quote.inverterCapacityKw} kW inverter{materials?.inverterSerial?` · Serial No.: ${materials.inverterSerial}`:''}</span></>}</td><td>{line.hsnSac}</td><td>1</td><td><strong>{formatInr(line.taxableValue)}</strong></td></tr>)}
-            {invoice.cgst > 0 && <tr className="tally-tax-line"><td></td><td><strong>CGST</strong></td><td></td><td></td><td><strong>{formatInr(invoice.cgst)}</strong></td></tr>}
-            {invoice.sgst > 0 && <tr className="tally-tax-line"><td></td><td><strong>SGST</strong></td><td></td><td></td><td><strong>{formatInr(invoice.sgst)}</strong></td></tr>}
-            {invoice.igst > 0 && <tr className="tally-tax-line"><td></td><td><strong>IGST</strong></td><td></td><td></td><td><strong>{formatInr(invoice.igst)}</strong></td></tr>}
+            {displayCgst > 0 && <tr className="tally-tax-line"><td></td><td><strong>CGST</strong></td><td></td><td></td><td><strong>{formatInr(displayCgst)}</strong></td></tr>}
+            {displaySgst > 0 && <tr className="tally-tax-line"><td></td><td><strong>SGST</strong></td><td></td><td></td><td><strong>{formatInr(displaySgst)}</strong></td></tr>}
+            {displayIgst > 0 && <tr className="tally-tax-line"><td></td><td><strong>IGST</strong></td><td></td><td></td><td><strong>{formatInr(displayIgst)}</strong></td></tr>}
           </tbody>
           <tfoot><tr><td colSpan={4}>Total</td><td>{formatInr(invoice.grandTotal)}</td></tr></tfoot>
         </table>
 
         <section className="tally-amount-words"><div><span>Amount Chargeable (in words)</span><em>E. & O.E</em></div><strong>INR {amountInWords(invoice.grandTotal)}</strong></section>
 
-        {invoice.igst > 0 ? <table className="tally-tax-table"><thead><tr><th>HSN/SAC</th><th>Taxable Value</th><th>IGST Rate</th><th>IGST Amount</th><th>Total Tax Amount</th></tr></thead><tbody>{taxLines.map(line=><tr key={line.lineType}><td>{line.hsnSac}</td><td>{formatInr(line.taxableValue)}</td><td>{line.gstRate}%</td><td>{formatInr(line.igst)}</td><td>{formatInr(line.igst)}</td></tr>)}</tbody><tfoot><tr><td>Total</td><td>{formatInr(invoice.taxableValue)}</td><td></td><td>{formatInr(invoice.igst)}</td><td>{formatInr(totalTax)}</td></tr></tfoot></table> : <table className="tally-tax-table"><thead><tr><th rowSpan={2}>HSN/SAC</th><th rowSpan={2}>Taxable Value</th><th colSpan={2}>CGST</th><th colSpan={2}>SGST/UTGST</th><th rowSpan={2}>Total Tax Amount</th></tr><tr><th>Rate</th><th>Amount</th><th>Rate</th><th>Amount</th></tr></thead><tbody>{taxLines.map(line=><tr key={line.lineType}><td>{line.hsnSac}</td><td>{formatInr(line.taxableValue)}</td><td>{line.gstRate/2}%</td><td>{formatInr(line.cgst)}</td><td>{line.gstRate/2}%</td><td>{formatInr(line.sgst)}</td><td>{formatInr(line.cgst+line.sgst)}</td></tr>)}</tbody><tfoot><tr><td>Total</td><td>{formatInr(invoice.taxableValue)}</td><td></td><td>{formatInr(invoice.cgst)}</td><td></td><td>{formatInr(invoice.sgst)}</td><td>{formatInr(totalTax)}</td></tr></tfoot></table>}
+        {displayIgst > 0 ? <table className="tally-tax-table"><thead><tr><th>HSN/SAC</th><th>Taxable Value</th><th>IGST Rate</th><th>IGST Amount</th><th>Total Tax Amount</th></tr></thead><tbody>{taxLines.map(line=><tr key={line.lineType}><td>{line.hsnSac}</td><td>{formatInr(line.taxableValue)}</td><td>{line.gstRate}%</td><td>{formatInr(line.igst)}</td><td>{formatInr(line.igst)}</td></tr>)}</tbody><tfoot><tr><td>Total</td><td>{formatInr(invoice.taxableValue)}</td><td></td><td>{formatInr(displayIgst)}</td><td>{formatInr(totalTax)}</td></tr></tfoot></table> : <table className="tally-tax-table"><thead><tr><th rowSpan={2}>HSN/SAC</th><th rowSpan={2}>Taxable Value</th><th colSpan={2}>CGST</th><th colSpan={2}>SGST</th><th rowSpan={2}>Total Tax Amount</th></tr><tr><th>Rate</th><th>Amount</th><th>Rate</th><th>Amount</th></tr></thead><tbody>{taxLines.map(line=><tr key={line.lineType}><td>{line.hsnSac}</td><td>{formatInr(line.taxableValue)}</td><td>{line.gstRate/2}%</td><td>{formatInr(line.cgst)}</td><td>{line.gstRate/2}%</td><td>{formatInr(line.sgst)}</td><td>{formatInr(line.cgst+line.sgst)}</td></tr>)}</tbody><tfoot><tr><td>Total</td><td>{formatInr(invoice.taxableValue)}</td><td></td><td>{formatInr(displayCgst)}</td><td></td><td>{formatInr(displaySgst)}</td><td>{formatInr(totalTax)}</td></tr></tfoot></table>}
 
         <p className="tally-tax-words">Tax Amount (in words): <strong>INR {amountInWords(totalTax)}</strong></p>
         <section className="tally-bottom-grid"><div className="tally-declaration"><p>Company's PAN: <strong>{company.pan}</strong></p><u>Declaration</u><span>We declare that this invoice shows the actual value of the goods and services described and that all particulars are true and correct.</span></div><div className="tally-bank-sign"><div><label>Company's Bank Details</label><span>Bank Name: <strong>{bank.bankName}</strong></span><span>A/c No.: <strong>{bank.accountNumber}</strong></span><span>Branch & IFS Code: <strong>{bank.branch} & {bank.ifsc}</strong></span></div><div className="tally-authorised">for {company.legalName}<strong>Authorised Signatory</strong></div></div></section>

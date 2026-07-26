@@ -52,9 +52,18 @@ describe('solar quotation calculations', () => {
   it('reverse-calculates 70/30 GST inside a GST-inclusive quotation amount',()=>{
     const result=calculateSplitGst(100000,{intrastate:true,supplyGstRate:5,installationGstRate:18,supplySharePercent:70,installationSharePercent:30,supplyHsn:'854140',installationSac:'995442'},'inclusive');
     expect(result.lines[0]).toMatchObject({grossAmount:70000,taxableValue:66666.67,cgst:1666.67,sgst:1666.66});
-    expect(result.lines[1]).toMatchObject({grossAmount:30000,taxableValue:25423.73,cgst:2288.14,sgst:2288.13});
+    expect(result.lines[1]).toMatchObject({grossAmount:30000,taxableValue:25423.73,cgst:2288.13,sgst:2288.14});
+    expect(result.cgst).toBe(result.sgst);
     expect(result.gross).toBe(100000);
     expect(result.taxableValue+result.cgst+result.sgst).toBeCloseTo(100000,2);
+  });
+
+  it('balances the displayed CGST and SGST totals for the 160000 inclusive invoice',()=>{
+    const result=calculateSplitGst(160000,{intrastate:true,supplyGstRate:5,installationGstRate:18,supplySharePercent:70,installationSharePercent:30,supplyHsn:'854140',installationSac:'995442'},'inclusive');
+    expect(result.taxableValue).toBe(147344.64);
+    expect(result.cgst).toBe(6327.68);
+    expect(result.sgst).toBe(6327.68);
+    expect(result.taxableValue+result.cgst+result.sgst).toBe(160000);
   });
 
   it('adds split GST above a GST-exclusive quotation amount',()=>{

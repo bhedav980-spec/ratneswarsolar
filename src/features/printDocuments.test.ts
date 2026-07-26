@@ -19,6 +19,8 @@ describe('clean printable documents', () => {
     expect(invoiceEngine).toContain("['Place of Supply', invoice.placeOfSupply");
     expect(invoiceEngine).not.toContain("['GST Treatment'");
     expect(invoiceEngine).not.toContain("doc.text('1 Job'");
+    expect(invoiceEngine).not.toContain("SGST/UTGST");
+    expect(invoiceEngine).not.toContain("${invoice.invoiceNo} | ${project.projectNo} | ${customer.customerNo}");
     expect(quotationEngine).toContain("format:'a4'");
     expect(quotationEngine).toContain("doc.addPage('a4','portrait')");
   });
@@ -35,6 +37,7 @@ describe('clean printable documents', () => {
     expect(invoice).not.toContain('tally-col-rate');
     expect(invoice).not.toContain('tally-col-per');
     expect(invoice).not.toContain('1 Job');
+    expect(invoice).not.toContain('SGST/UTGST');
     expect(quotation).toContain('word-quote-page');
     expect(invoice).toContain('rs-reference-document invoice-document');
     expect(invoice).toContain('no dashboard, browser URL, date/time header or controls');

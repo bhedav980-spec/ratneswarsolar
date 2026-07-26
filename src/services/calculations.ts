@@ -118,6 +118,25 @@ export function invoiceLineDescription(lineType: InvoiceTaxLine['lineType']) {
   return lineType === 'installation' ? INVOICE_BOS_DESCRIPTION : INVOICE_SUPPLY_DESCRIPTION;
 }
 
+export function balanceIntrastateTaxLines(inputLines: InvoiceTaxLine[]): InvoiceTaxLine[] {
+  const lines = inputLines.map((line) => ({ ...line }));
+  if (!lines.length || lines.some((line) => Number(line.igst) > 0)) return lines;
+  const totalTax = roundMoney(lines.reduce((sum, line) => sum + Number(line.cgst) + Number(line.sgst), 0));
+  const targetCgst = roundMoney(totalTax / 2);
+  const targetSgst = roundMoney(totalTax - targetCgst);
+  let allocatedCgst = 0;
+  let allocatedSgst = 0;
+  return lines.map((line, index) => {
+    const lineTax = roundMoney(Number(line.cgst) + Number(line.sgst));
+    const isLast = index === lines.length - 1;
+    const cgst = isLast ? roundMoney(targetCgst - allocatedCgst) : roundMoney(lineTax / 2);
+    const sgst = isLast ? roundMoney(targetSgst - allocatedSgst) : roundMoney(lineTax - cgst);
+    allocatedCgst = roundMoney(allocatedCgst + cgst);
+    allocatedSgst = roundMoney(allocatedSgst + sgst);
+    return { ...line, cgst, sgst };
+  });
+}
+
 export function calculateSplitGst(amount: number, rule: Pick<TaxRule, 'intrastate'|'supplyGstRate'|'installationGstRate'|'supplySharePercent'|'installationSharePercent'|'supplyHsn'|'installationSac'>, treatment: SplitTaxTreatment = 'inclusive') {
   const supplyShare = Number(rule.supplySharePercent);
   const installationShare = Number(rule.installationSharePercent);
@@ -142,10 +161,11 @@ export function calculateSplitGst(amount: number, rule: Pick<TaxRule, 'intrastat
   };
   const supplyAmount = roundMoney(safeAmount * supplyShare / 100);
   const installationAmount = roundMoney(safeAmount - supplyAmount);
-  const lines = [
+  const rawLines = [
     makeLine('supply', INVOICE_SUPPLY_DESCRIPTION, rule.supplyHsn, supplyShare, Number(rule.supplyGstRate), supplyAmount),
     makeLine('installation', INVOICE_BOS_DESCRIPTION, rule.installationSac, installationShare, Number(rule.installationGstRate), installationAmount),
   ].filter((line) => line.sharePercent > 0 || line.grossAmount > 0);
+  const lines = rule.intrastate ? balanceIntrastateTaxLines(rawLines) : rawLines;
   const total = (field: keyof Pick<InvoiceTaxLine, 'taxableValue'|'cgst'|'sgst'|'igst'|'grossAmount'>) => roundMoney(lines.reduce((sum, line) => sum + Number(line[field]), 0));
   return { treatment, quotedAmount: safeAmount, lines, taxableValue: total('taxableValue'), cgst: total('cgst'), sgst: total('sgst'), igst: total('igst'), gross: total('grossAmount') };
 }
