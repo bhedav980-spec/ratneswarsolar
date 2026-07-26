@@ -1,5 +1,5 @@
 import type { jsPDF } from 'jspdf';
-import { amountInWords, formatDate } from '../services/calculations';
+import { amountInWords, formatDate, invoiceLineDescription } from '../services/calculations';
 import type { CrmSettings, Customer, Invoice, InvoiceTaxLine, Project } from '../types/domain';
 
 interface InvoicePdfInput {
@@ -22,9 +22,10 @@ const clean = (value: unknown) => String(value ?? '-')
 const money = (value: number) => new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value || 0);
 
 function invoiceLines(input: InvoicePdfInput): InvoiceTaxLine[] {
-  const { invoice, project, settings } = input;
+  const { invoice, settings } = input;
   const totalTax = invoice.cgst + invoice.sgst + invoice.igst;
-  return invoice.taxLines?.length ? invoice.taxLines : [{ lineType:'supply', description:`Supply & Installation of ${project.acceptedQuoteSnapshot.dcCapacityKw.toFixed(3)} kWp Rooftop Solar Power Plant`, hsnSac:settings.defaultHsnSac, sharePercent:100, gstRate:invoice.taxableValue>0?Number((totalTax/invoice.taxableValue*100).toFixed(3)):0, grossAmount:invoice.grandTotal, taxableValue:invoice.taxableValue, cgst:invoice.cgst, sgst:invoice.sgst, igst:invoice.igst }];
+  const lines: InvoiceTaxLine[] = invoice.taxLines?.length ? invoice.taxLines : [{ lineType:'supply', description:invoiceLineDescription('supply'), hsnSac:settings.defaultHsnSac, sharePercent:100, gstRate:invoice.taxableValue>0?Number((totalTax/invoice.taxableValue*100).toFixed(3)):0, grossAmount:invoice.grandTotal, taxableValue:invoice.taxableValue, cgst:invoice.cgst, sgst:invoice.sgst, igst:invoice.igst }];
+  return lines.map((line) => ({ ...line, description: invoiceLineDescription(line.lineType) }));
 }
 
 function wrapped(doc: jsPDF, text: string, maxWidth: number) {

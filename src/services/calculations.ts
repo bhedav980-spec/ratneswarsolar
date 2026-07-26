@@ -111,6 +111,13 @@ export function reverseCalculateGst(gross: number, rate: number, interstate = fa
 
 type SplitTaxTreatment = 'inclusive' | 'exclusive';
 
+export const INVOICE_SUPPLY_DESCRIPTION = 'Solar Rooftop Power Generation System (PV Modules and Inverter)';
+export const INVOICE_BOS_DESCRIPTION = 'Mounting Structure and Balance of System (BOS) Materials for Solar Installation';
+
+export function invoiceLineDescription(lineType: InvoiceTaxLine['lineType']) {
+  return lineType === 'installation' ? INVOICE_BOS_DESCRIPTION : INVOICE_SUPPLY_DESCRIPTION;
+}
+
 export function calculateSplitGst(amount: number, rule: Pick<TaxRule, 'intrastate'|'supplyGstRate'|'installationGstRate'|'supplySharePercent'|'installationSharePercent'|'supplyHsn'|'installationSac'>, treatment: SplitTaxTreatment = 'inclusive') {
   const supplyShare = Number(rule.supplySharePercent);
   const installationShare = Number(rule.installationSharePercent);
@@ -136,8 +143,8 @@ export function calculateSplitGst(amount: number, rule: Pick<TaxRule, 'intrastat
   const supplyAmount = roundMoney(safeAmount * supplyShare / 100);
   const installationAmount = roundMoney(safeAmount - supplyAmount);
   const lines = [
-    makeLine('supply', 'Solar Power Generation System - Supply', rule.supplyHsn, supplyShare, Number(rule.supplyGstRate), supplyAmount),
-    makeLine('installation', 'Installation and Commissioning of Solar Power System', rule.installationSac, installationShare, Number(rule.installationGstRate), installationAmount),
+    makeLine('supply', INVOICE_SUPPLY_DESCRIPTION, rule.supplyHsn, supplyShare, Number(rule.supplyGstRate), supplyAmount),
+    makeLine('installation', INVOICE_BOS_DESCRIPTION, rule.installationSac, installationShare, Number(rule.installationGstRate), installationAmount),
   ].filter((line) => line.sharePercent > 0 || line.grossAmount > 0);
   const total = (field: keyof Pick<InvoiceTaxLine, 'taxableValue'|'cgst'|'sgst'|'igst'|'grossAmount'>) => roundMoney(lines.reduce((sum, line) => sum + Number(line[field]), 0));
   return { treatment, quotedAmount: safeAmount, lines, taxableValue: total('taxableValue'), cgst: total('cgst'), sgst: total('sgst'), igst: total('igst'), gross: total('grossAmount') };

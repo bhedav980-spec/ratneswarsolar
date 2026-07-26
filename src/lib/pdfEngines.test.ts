@@ -59,8 +59,8 @@ const invoice: Invoice = {
   quotedAmount: 200000, taxableValue: 184180.79, cgst: 7909.61, sgst: 7909.60, igst: 0, roundOff: 0, grandTotal: 200000,
   taxRuleName: 'Solar EPC 70/30 - Supply 5% / Installation 18%',
   taxLines: [
-    { lineType: 'supply', description: 'Solar Power Generation System - Supply', hsnSac: '854140', sharePercent: 70, gstRate: 5, grossAmount: 140000, taxableValue: 133333.33, cgst: 3333.34, sgst: 3333.33, igst: 0 },
-    { lineType: 'installation', description: 'Installation and Commissioning of Solar Power System', hsnSac: '995442', sharePercent: 30, gstRate: 18, grossAmount: 60000, taxableValue: 50847.46, cgst: 4576.27, sgst: 4576.27, igst: 0 },
+    { lineType: 'supply', description: 'Solar Rooftop Power Generation System (PV Modules and Inverter)', hsnSac: '854140', sharePercent: 70, gstRate: 5, grossAmount: 140000, taxableValue: 133333.33, cgst: 3333.34, sgst: 3333.33, igst: 0 },
+    { lineType: 'installation', description: 'Mounting Structure and Balance of System (BOS) Materials for Solar Installation', hsnSac: '995442', sharePercent: 30, gstRate: 18, grossAmount: 60000, taxableValue: 50847.46, cgst: 4576.27, sgst: 4576.27, igst: 0 },
   ],
 };
 
@@ -69,8 +69,8 @@ const exclusiveInvoice: Invoice = {
   id: 'invoice-2', invoiceNo: 'RE-INV-20260002', taxMode: 'exclusive', quotedAmount: 200000,
   taxableValue: 200000, cgst: 8900, sgst: 8900, grandTotal: 217800,
   taxLines: [
-    { lineType: 'supply', description: 'Solar Power Generation System - Supply', hsnSac: '854140', sharePercent: 70, gstRate: 5, grossAmount: 147000, taxableValue: 140000, cgst: 3500, sgst: 3500, igst: 0 },
-    { lineType: 'installation', description: 'Installation and Commissioning of Solar Power System', hsnSac: '995442', sharePercent: 30, gstRate: 18, grossAmount: 70800, taxableValue: 60000, cgst: 5400, sgst: 5400, igst: 0 },
+    { lineType: 'supply', description: 'Solar Rooftop Power Generation System (PV Modules and Inverter)', hsnSac: '854140', sharePercent: 70, gstRate: 5, grossAmount: 147000, taxableValue: 140000, cgst: 3500, sgst: 3500, igst: 0 },
+    { lineType: 'installation', description: 'Mounting Structure and Balance of System (BOS) Materials for Solar Installation', hsnSac: '995442', sharePercent: 30, gstRate: 18, grossAmount: 70800, taxableValue: 60000, cgst: 5400, sgst: 5400, igst: 0 },
   ],
 };
 

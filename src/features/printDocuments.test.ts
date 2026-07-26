@@ -22,7 +22,8 @@ describe('clean printable documents', () => {
 
   it('keeps quotation and invoice content in A4 document shells', () => {
     expect(styles).toContain('.a4-document { width: 210mm; min-height: 297mm;');
-    expect(quotation).toContain('Grand Total (Including GST)');
+    expect(quotation).toContain('Grand Total:');
+    expect(quotation).not.toContain('Grand Total (Including GST)');
     expect(invoice).toContain('Panel Serial Nos.');
     expect(invoice).not.toContain('Tax Invoice (Annexure)');
     expect(quotation).toContain('word-quote-page');

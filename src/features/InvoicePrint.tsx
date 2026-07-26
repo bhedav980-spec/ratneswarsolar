@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Download, Printer } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { openVectorInvoicePdf, downloadVectorInvoicePdf } from '../lib/invoicePdf';
-import { amountInWords, formatDate, formatInr } from '../services/calculations';
+import { amountInWords, formatDate, formatInr, invoiceLineDescription } from '../services/calculations';
 import type { Customer, Invoice, InvoiceTaxLine, Project } from '../types/domain';
 import { useCrm } from '../lib/CrmContext';
 
@@ -17,7 +17,8 @@ export function InvoicePrint({ invoice, project, customer, onClose }: { invoice:
   const filename = `${invoice.invoiceNo.replace(/[^a-zA-Z0-9_-]/g, '-')}-tax-invoice.pdf`;
   const wattageLabel = quote.panelWattageLabel ?? `${quote.panelWattage} Wp`;
   const totalTax = invoice.cgst + invoice.sgst + invoice.igst;
-  const taxLines: InvoiceTaxLine[] = invoice.taxLines?.length ? invoice.taxLines : [{ lineType:'supply', description:`Supply & Installation of ${quote.dcCapacityKw.toFixed(3)} kWp Rooftop Solar Power Plant`, hsnSac:data!.settings.defaultHsnSac, sharePercent:100, gstRate:invoice.taxableValue>0?Number((totalTax/invoice.taxableValue*100).toFixed(3)):0, grossAmount:invoice.grandTotal, taxableValue:invoice.taxableValue, cgst:invoice.cgst, sgst:invoice.sgst, igst:invoice.igst }];
+  const storedTaxLines: InvoiceTaxLine[] = invoice.taxLines?.length ? invoice.taxLines : [{ lineType:'supply', description:invoiceLineDescription('supply'), hsnSac:data!.settings.defaultHsnSac, sharePercent:100, gstRate:invoice.taxableValue>0?Number((totalTax/invoice.taxableValue*100).toFixed(3)):0, grossAmount:invoice.grandTotal, taxableValue:invoice.taxableValue, cgst:invoice.cgst, sgst:invoice.sgst, igst:invoice.igst }];
+  const taxLines = storedTaxLines.map((line) => ({ ...line, description: invoiceLineDescription(line.lineType) }));
   const approvedDate = quote.approvedAt ? formatDate(quote.approvedAt) : '-';
   const pdfInput = { invoice, project, customer, settings: data!.settings };
 
