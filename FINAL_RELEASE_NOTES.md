@@ -1,5 +1,15 @@
 # Final Release Notes
 
+## Final v14 Invoice Layout Refinement
+
+- Retained the existing clean customer and company detail blocks.
+- Replaced the obsolete GST-treatment metadata cell with the invoice's dynamic Place of Supply.
+- Standardised Destination as a neutral dash.
+- Simplified the main item table to Sl No., Particulars, HSN/SAC, Quantity and Amount; removed Rate, Per and `Job` text.
+- Retained only thin professional table rules and removed internal horizontal item-row separators.
+- Embedded a consistent document font so downloaded A4 invoices remain sharp, selectable and visually stable.
+- No database migration or Edge Function deployment is required for this layout-only update.
+
 ## What changed
 
 - Mandatory authenticator/TOTP was removed. Sign-in now uses verified Supabase email/password, strong password policy, role-based RLS, active-account checks, audit events, password reset and 30-minute idle logout.

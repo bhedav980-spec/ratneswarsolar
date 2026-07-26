@@ -16,6 +16,9 @@ describe('clean printable documents', () => {
     expect(engine).toContain('outputPdf');
     expect(invoiceEngine).toContain("format: 'a4'");
     expect(invoiceEngine).toContain("doc.text('Tax Invoice'");
+    expect(invoiceEngine).toContain("['Place of Supply', invoice.placeOfSupply");
+    expect(invoiceEngine).not.toContain("['GST Treatment'");
+    expect(invoiceEngine).not.toContain("doc.text('1 Job'");
     expect(quotationEngine).toContain("format:'a4'");
     expect(quotationEngine).toContain("doc.addPage('a4','portrait')");
   });
@@ -26,6 +29,12 @@ describe('clean printable documents', () => {
     expect(quotation).not.toContain('Grand Total (Including GST)');
     expect(invoice).toContain('Panel Serial Nos.');
     expect(invoice).not.toContain('Tax Invoice (Annexure)');
+    expect(invoice).toContain('<label>Place of Supply</label><strong>{invoice.placeOfSupply}</strong>');
+    expect(invoice).toContain("<label>Destination</label><strong>-</strong>");
+    expect(invoice).not.toContain('<label>GST Treatment</label>');
+    expect(invoice).not.toContain('tally-col-rate');
+    expect(invoice).not.toContain('tally-col-per');
+    expect(invoice).not.toContain('1 Job');
     expect(quotation).toContain('word-quote-page');
     expect(invoice).toContain('rs-reference-document invoice-document');
     expect(invoice).toContain('no dashboard, browser URL, date/time header or controls');

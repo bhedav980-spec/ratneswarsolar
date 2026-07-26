@@ -54,10 +54,10 @@ export function InvoicePrint({ invoice, project, customer, onClose }: { invoice:
     </div>
     <div className="tally-meta-grid">
       <div><label>Invoice No.</label><strong>{invoice.invoiceNo}</strong></div><div><label>Dated</label><strong>{formatDate(invoice.invoiceDate)}</strong></div>
-      <div><label>GST Treatment</label><strong>{invoice.taxMode==='exclusive'?`Added above quote · Base ${formatInr(invoice.quotedAmount??quote.grandTotal)}`:'Included in quotation total'}</strong></div><div><label>Mode/Terms of Payment</label><strong>{quote.paymentTerms || data!.settings.paymentTerms}</strong></div>
+      <div><label>Place of Supply</label><strong>{invoice.placeOfSupply}</strong></div><div><label>Mode/Terms of Payment</label><strong>{quote.paymentTerms || data!.settings.paymentTerms}</strong></div>
       <div><label>Reference No. & Date.</label><strong>{quote.quoteNo} · {approvedDate}</strong></div><div><label>Other References</label><strong>{project.projectNo}</strong></div>
       <div><label>Buyer's Consumer No.</label><strong>{customer.consumerNumber || '-'}</strong></div><div><label>Project Capacity</label><strong>{quote.dcCapacityKw.toFixed(3)} kWp</strong></div>
-      <div><label>Dispatched through</label><strong>EPC Installation</strong></div><div><label>Destination</label><strong>{customer.villageCity}, {customer.district}</strong></div>
+      <div><label>Dispatched through</label><strong>EPC Installation</strong></div><div><label>Destination</label><strong>-</strong></div>
       <div className="tally-meta-wide"><label>Terms of Delivery</label><strong>Supply, installation and commissioning of rooftop solar power plant as per accepted quotation.</strong></div>
     </div>
   </section>;
@@ -72,14 +72,14 @@ export function InvoicePrint({ invoice, project, customer, onClose }: { invoice:
         {partyAndInvoiceDetails}
 
         <table className="tally-items-table">
-          <colgroup><col className="tally-col-sl"/><col className="tally-col-particulars"/><col className="tally-col-hsn"/><col className="tally-col-qty"/><col className="tally-col-rate"/><col className="tally-col-per"/><col className="tally-col-amount"/></colgroup>
-          <thead><tr><th>Sl<br/><small>No.</small></th><th>Particulars</th><th>HSN/SAC</th><th>Quantity</th><th>Rate</th><th>per</th><th>Amount</th></tr></thead>
-          <tbody>{taxLines.map((line,index)=><tr className="tally-main-item tally-split-item" key={line.lineType}><td>{index+1}</td><td><strong>{line.description}</strong>{line.lineType==='supply'&&<><span>{quote.panelQuantity} x {wattageLabel} {quote.panelBrand} {quote.panelTechnology} PV modules</span>{materials?.panelSerials.length?<span className="tally-panel-serials"><b>Panel Serial Nos.:</b> {materials.panelSerials.map((serial,serialIndex)=>`${serialIndex+1}. ${serial}`).join(', ')}</span>:null}<span>{quote.inverterBrand} {quote.inverterModel||''} {quote.inverterCapacityKw} kW inverter{materials?.inverterSerial?` · Serial No.: ${materials.inverterSerial}`:''}</span></>}</td><td>{line.hsnSac}</td><td>1 Job</td><td>{formatInr(line.taxableValue)}</td><td>Job</td><td><strong>{formatInr(line.taxableValue)}</strong></td></tr>)}
-            {invoice.cgst > 0 && <tr className="tally-tax-line"><td></td><td><strong>CGST</strong></td><td></td><td></td><td></td><td></td><td><strong>{formatInr(invoice.cgst)}</strong></td></tr>}
-            {invoice.sgst > 0 && <tr className="tally-tax-line"><td></td><td><strong>SGST</strong></td><td></td><td></td><td></td><td></td><td><strong>{formatInr(invoice.sgst)}</strong></td></tr>}
-            {invoice.igst > 0 && <tr className="tally-tax-line"><td></td><td><strong>IGST</strong></td><td></td><td></td><td></td><td></td><td><strong>{formatInr(invoice.igst)}</strong></td></tr>}
+          <colgroup><col className="tally-col-sl"/><col className="tally-col-particulars"/><col className="tally-col-hsn"/><col className="tally-col-qty"/><col className="tally-col-amount"/></colgroup>
+          <thead><tr><th>Sl<br/><small>No.</small></th><th>Particulars</th><th>HSN/SAC</th><th>Quantity</th><th>Amount</th></tr></thead>
+          <tbody>{taxLines.map((line,index)=><tr className="tally-main-item tally-split-item" key={line.lineType}><td>{index+1}</td><td><strong>{line.description}</strong>{line.lineType==='supply'&&<><span>{quote.panelQuantity} x {wattageLabel} {quote.panelBrand} {quote.panelTechnology} PV modules</span>{materials?.panelSerials.length?<span className="tally-panel-serials"><b>Panel Serial Nos.:</b> {materials.panelSerials.map((serial,serialIndex)=>`${serialIndex+1}. ${serial}`).join(', ')}</span>:null}<span>{quote.inverterBrand} {quote.inverterModel||''} {quote.inverterCapacityKw} kW inverter{materials?.inverterSerial?` · Serial No.: ${materials.inverterSerial}`:''}</span></>}</td><td>{line.hsnSac}</td><td>1</td><td><strong>{formatInr(line.taxableValue)}</strong></td></tr>)}
+            {invoice.cgst > 0 && <tr className="tally-tax-line"><td></td><td><strong>CGST</strong></td><td></td><td></td><td><strong>{formatInr(invoice.cgst)}</strong></td></tr>}
+            {invoice.sgst > 0 && <tr className="tally-tax-line"><td></td><td><strong>SGST</strong></td><td></td><td></td><td><strong>{formatInr(invoice.sgst)}</strong></td></tr>}
+            {invoice.igst > 0 && <tr className="tally-tax-line"><td></td><td><strong>IGST</strong></td><td></td><td></td><td><strong>{formatInr(invoice.igst)}</strong></td></tr>}
           </tbody>
-          <tfoot><tr><td colSpan={6}>Total</td><td>{formatInr(invoice.grandTotal)}</td></tr></tfoot>
+          <tfoot><tr><td colSpan={4}>Total</td><td>{formatInr(invoice.grandTotal)}</td></tr></tfoot>
         </table>
 
         <section className="tally-amount-words"><div><span>Amount Chargeable (in words)</span><em>E. & O.E</em></div><strong>INR {amountInWords(invoice.grandTotal)}</strong></section>
