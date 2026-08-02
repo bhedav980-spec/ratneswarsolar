@@ -1,5 +1,13 @@
 # Final Release Notes
 
+## Retry-Safe Invoice Issuance
+
+- Made `Save Installation and Issue Invoice` safe to retry after a slow response or stale browser state.
+- Reuses same-project panel serial records and updates the existing installation-material record instead of failing on duplicates.
+- A corrected invoice after cancellation keeps the quotation-linked Bill Number and receives an audited `-R1`, `-R2` reissue suffix rather than overwriting the cancelled invoice.
+- Backend invoice errors now display directly inside the open invoice form.
+- Added migration `202608020021_retry_safe_invoice_issuance.sql` for existing deployments.
+
 ## Existing Feasibility → Missing Project Recovery
 
 - Fixed the case where a quotation-linked Feasibility report already exists but its previously reset/deleted Project is missing.

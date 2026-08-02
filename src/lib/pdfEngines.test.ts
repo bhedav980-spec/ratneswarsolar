@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { createInvoicePdf } from './invoicePdf';
 import { createQuotationPdf } from './quotationPdf';
 import type { CrmSettings, Customer, Invoice, Project, Quotation } from '../types/domain';
@@ -75,6 +75,14 @@ const exclusiveInvoice: Invoice = {
 };
 
 describe('vector A4 document engines', () => {
+  it('keeps invoice issuance retries visible and database-safe', () => {
+    const projectFeature = readFileSync('src/features/Projects.tsx', 'utf8');
+    const retryMigration = readFileSync('supabase/migrations/202608020021_retry_safe_invoice_issuance.sql', 'utf8');
+    expect(projectFeature).toContain("setError(cause instanceof Error?cause.message:'Invoice generation failed.')");
+    expect(retryMigration).toContain("if existing_invoice.id is not null then return existing_invoice.id");
+    expect(retryMigration).toContain('existing_serial_project is distinct from p.id');
+    expect(retryMigration).toContain('on conflict(project_id) do update');
+  });
   it('creates an exact two-page quotation PDF', async () => {
     const pdf = await createQuotationPdf({ quote, customer, settings, copyType: 'customer' });
     expect(pdf.getNumberOfPages()).toBe(2);
