@@ -1,5 +1,12 @@
 # Final Release Notes
 
+## Existing Feasibility → Missing Project Recovery
+
+- Fixed the case where a quotation-linked Feasibility report already exists but its previously reset/deleted Project is missing.
+- Updating that Feasibility report now recreates exactly one Project, restores Agreement/Feasibility links and moves the quotation to Project Created in one secured transaction.
+- The Feasibility dialog clearly shows `Update & Create Project` for this recovery case.
+- Added migration `202608020020_recover_feasibility_project_creation.sql` for existing deployments.
+
 ## Quotation Status Transition Fix
 
 - Made quotation status updates idempotent so a repeated click, slow-network retry or stale response cannot fail after the first request already succeeded.

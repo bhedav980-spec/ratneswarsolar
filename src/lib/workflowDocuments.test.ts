@@ -30,6 +30,15 @@ describe('Agreement and feasibility workflow documents', () => {
     expect(quotationFeature).toContain('if (existingReport) await updateFeasibilityReport(q.id, input)');
   });
 
+  it('recovers a missing project from an existing feasibility report exactly once', () => {
+    const quotationFeature = readFileSync('src/features/Quotations.tsx', 'utf8');
+    const recoveryMigration = readFileSync('supabase/migrations/202608020020_recover_feasibility_project_creation.sql', 'utf8');
+    expect(quotationFeature).toContain("needsProject?'Update & Create Project'");
+    expect(recoveryMigration).toContain('if pid is null then');
+    expect(recoveryMigration).toContain('pid := public.approve_quotation_and_create_project(q.id)');
+    expect(recoveryMigration).toContain("'feasibility_updated_project_recovered'");
+  });
+
   it('replaces only the dynamic agreement party/date fields in the official DOCX XML', async () => {
     const source = await readFile('public/templates/agreement-template.docx');
     const zip = await JSZip.loadAsync(source);
