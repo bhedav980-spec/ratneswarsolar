@@ -1,5 +1,12 @@
 # Final Release Notes
 
+## Quotation Status Transition Fix
+
+- Made quotation status updates idempotent so a repeated click, slow-network retry or stale response cannot fail after the first request already succeeded.
+- Added an immediate client-side action lock and disabled status buttons while a status update is running.
+- Removed the invalid Reject action from Approved quotations; approved commercial records remain immutable and may proceed to Agreement/Feasibility or be revised through the existing revision workflow.
+- Added migration `202608020019_idempotent_quotation_status.sql` for existing deployments.
+
 ## Final v14 Invoice Layout Refinement
 
 - Retained the existing clean customer and company detail blocks.
@@ -12,6 +19,12 @@
 - Increased the Sl No. column width and corrected the tax-summary merged-header rules so no line crosses heading text.
 - Standardised the intrastate heading to `SGST` and balanced CGST/SGST paise allocation across tax lines.
 - No database migration or Edge Function deployment is required for this layout-only update.
+
+## Feasibility Edit Duplicate Fix
+
+- Corrected the `Update & Download PDF` flow to detect an existing quotation-linked feasibility report directly.
+- Existing reports now call the secured update function instead of attempting a second insert and violating `feasibility_reports_quotation_id_key`.
+- No database migration or Edge Function deployment is required for this frontend workflow correction.
 
 ## What changed
 

@@ -41,11 +41,19 @@ const cleanQuotationNotes = (value: string) => value
 export function Quotations() {
   const { data, saveQuotation, setQuotationStatus, saveAgreementDocument, saveFeasibilityAndCreateProject, updateFeasibilityReport, saving } = useCrm();
   const [editing, setEditing] = useState<Quotation | 'new' | null>(null); const [preview, setPreview] = useState<Quotation | null>(null); const [feasibilityQuote, setFeasibilityQuote] = useState<Quotation | null>(null); const [filter, setFilter] = useState('all');
-  const [documentBusy, setDocumentBusy] = useState(''); const [documentError, setDocumentError] = useState('');
+  const [documentBusy, setDocumentBusy] = useState(''); const [documentError, setDocumentError] = useState(''); const [statusBusy, setStatusBusy] = useState('');
+  const statusBusyRef = useRef(false);
   if (!data) return null;
   const list = filter === 'all' ? data.quotations : data.quotations.filter((q) => q.status === filter); const customer = (id: string) => data.customers.find((c) => c.id === id);
   const canApprove = data.profile.role !== 'dealer'; const statusTone = (s: string) => s === 'approved' || s === 'project_created' ? 'good' : s === 'rejected' ? 'bad' : ['sent','pending'].includes(s) ? 'warn' : 'neutral';
-  const change = async (q: Quotation, status: Quotation['status']) => { const reason = status === 'rejected' ? window.prompt('Rejection reason (required)') ?? '' : ''; if (status === 'rejected' && !reason.trim()) return; await setQuotationStatus(q.id, status, reason); };
+  const change = async (q: Quotation, status: Quotation['status']) => {
+    if (statusBusyRef.current || saving || q.status === status) return;
+    const reason = status === 'rejected' ? window.prompt('Rejection reason (required)') ?? '' : '';
+    if (status === 'rejected' && !reason.trim()) return;
+    statusBusyRef.current = true; setStatusBusy(q.id);
+    try { await setQuotationStatus(q.id, status, reason); }
+    finally { statusBusyRef.current = false; setStatusBusy(''); }
+  };
   const approve = async (q: Quotation) => { if (!window.confirm(`Approve ${q.quoteNo}? The Agreement DOCX and Feasibility Report will be completed before its project is created.`)) return; await change(q, 'approved'); };
   const downloadBlob = (blob: Blob, filename: string) => { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 60_000); };
   const generateAgreement = async (q: Quotation) => {
@@ -65,7 +73,8 @@ export function Quotations() {
   const generateFeasibility = async (q: Quotation, input: FeasibilityInput) => {
     const selectedCustomer = customer(q.customerId); if (!selectedCustomer) return;
     const pdf = await createFeasibilityPdf({ quotation:q,customer:selectedCustomer,feasibility:input });
-    if (q.status === 'project_created') await updateFeasibilityReport(q.id, input);
+    const existingReport = data.feasibilityReports.find((report) => report.quotationId === q.id);
+    if (existingReport) await updateFeasibilityReport(q.id, input);
     else await saveFeasibilityAndCreateProject(q.id, input);
     pdf.save(`${q.quoteNo.replace(/[^A-Za-z0-9_-]+/g, '-')}-feasibility-report.pdf`);
   };
@@ -76,13 +85,13 @@ export function Quotations() {
     <section className="card table-card">{list.length ? <table><thead><tr><th>Reference</th><th>Customer</th><th>System</th><th>Value</th><th>Status</th><th>Actions</th></tr></thead><tbody>{list.map((q) => <tr key={q.id}><td><strong>{q.quoteNo}</strong><small>Revision {q.versionNo}</small></td><td>{customer(q.customerId)?.fullName ?? 'Missing customer'}</td><td>{q.dcCapacityKw.toFixed(3)} kW<small>{q.panelBrand} {q.panelTechnology} · {q.panelWattageLabel ?? `${q.panelWattage} Wp`}</small></td><td><strong>{formatInr(q.grandTotal)}</strong><small>{q.loanRequired ? 'Loan quotation' : 'GST included'}</small></td><td><Status tone={statusTone(q.status)}>{q.status.replace('_',' ')}</Status></td><td><div className="row-actions">
       <button className="icon-btn" title="Preview" onClick={() => setPreview(q)}><Eye size={16} /></button>
       {q.status === 'draft' && <button className="icon-btn" title="Edit draft" onClick={() => setEditing(q)}><FilePlus2 size={16} /></button>}
-      {q.status === 'draft' && <button className="icon-btn" title="Mark sent" onClick={() => void change(q, 'sent')}><Send size={16} /></button>}
-      {canApprove && ['sent','pending'].includes(q.status) && <button className="icon-btn good" title="Approve quotation" onClick={() => void approve(q)}><CheckCircle2 size={16} /></button>}
+      {q.status === 'draft' && <button className="icon-btn" disabled={saving || Boolean(statusBusy)} title="Mark sent" onClick={() => void change(q, 'sent')}><Send size={16} /></button>}
+      {canApprove && ['sent','pending'].includes(q.status) && <button className="icon-btn good" disabled={saving || Boolean(statusBusy)} title="Approve quotation" onClick={() => void approve(q)}><CheckCircle2 size={16} /></button>}
       {canApprove && q.status === 'approved' && <button className="btn btn--small" disabled={documentBusy === q.id || saving} title={data.agreements.some((agreement) => agreement.quotationId === q.id) ? 'Download the editable Agreement DOCX again' : 'Generate editable Agreement DOCX'} onClick={() => void generateAgreement(q)}><Download size={14} /> Agreement DOCX</button>}
       {canApprove && q.status === 'approved' && data.agreements.some((agreement) => agreement.quotationId === q.id) && <button className="btn btn--small btn--primary" title="Complete feasibility and create project" onClick={() => setFeasibilityQuote(q)}><FileCheck2 size={14} /> Feasibility</button>}
       {canApprove && q.status === 'project_created' && data.agreements.some((agreement) => agreement.quotationId === q.id) && <button className="btn btn--small" disabled={documentBusy === q.id} title="Download editable Agreement DOCX" onClick={() => void generateAgreement(q)}><Download size={14} /> Agreement</button>}
       {canApprove && q.status === 'project_created' && data.feasibilityReports.find((report) => report.quotationId === q.id) && <button className="btn btn--small" title="Edit report fields and download a corrected Feasibility PDF" onClick={() => setFeasibilityQuote(q)}><FileCheck2 size={14} /> Edit Feasibility</button>}
-      {canApprove && !['rejected','project_created'].includes(q.status) && <button className="icon-btn bad" title="Reject" onClick={() => void change(q, 'rejected')}><XCircle size={16} /></button>}
+      {canApprove && ['draft','sent','pending'].includes(q.status) && <button className="icon-btn bad" disabled={saving || Boolean(statusBusy)} title="Reject" onClick={() => void change(q, 'rejected')}><XCircle size={16} /></button>}
       {!['draft','project_created'].includes(q.status) && <button className="icon-btn" title="Create revision" onClick={() => setEditing({ ...q, id: crypto.randomUUID(), versionNo: q.versionNo + 1, status: 'draft', createdAt: new Date().toISOString(), approvedAt: null, sentAt: null, rejectedAt: null })}><Copy size={16} /></button>}
     </div></td></tr>)}</tbody></table> : <Empty title="No quotations" detail="Create a quotation after adding a customer." />}</section>
     {editing && <QuoteForm initial={editing === 'new' ? undefined : editing} customers={data.customers} onClose={() => setEditing(null)} saving={saving} onSave={async (quote) => { await saveQuotation(quote); setEditing(null); }} />}

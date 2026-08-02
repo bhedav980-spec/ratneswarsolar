@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import JSZip from 'jszip';
 import { populateAgreementXml } from './agreementDocx';
+import { readFileSync } from 'node:fs';
 import { createFeasibilityPdf, quotationSerialNumber } from './feasibilityPdf';
 import type { Customer, Quotation } from '../types/domain';
 
@@ -13,6 +14,22 @@ const quotation = {
 } as Quotation;
 
 describe('Agreement and feasibility workflow documents', () => {
+  it('keeps quotation status updates idempotent and blocks invalid UI actions', () => {
+    const quotationFeature = readFileSync('src/features/Quotations.tsx', 'utf8');
+    const statusMigration = readFileSync('supabase/migrations/202608020019_idempotent_quotation_status.sql', 'utf8');
+    expect(quotationFeature).toContain('if (statusBusyRef.current || saving || q.status === status) return');
+    expect(quotationFeature).toContain("['draft','sent','pending'].includes(q.status)");
+    expect(quotationFeature).toContain('disabled={saving || Boolean(statusBusy)}');
+    expect(statusMigration).toContain('if old = p_status then');
+    expect(statusMigration).toContain('return;');
+  });
+
+  it('updates an existing feasibility record instead of inserting a duplicate', () => {
+    const quotationFeature = readFileSync('src/features/Quotations.tsx', 'utf8');
+    expect(quotationFeature).toContain('const existingReport = data.feasibilityReports.find');
+    expect(quotationFeature).toContain('if (existingReport) await updateFeasibilityReport(q.id, input)');
+  });
+
   it('replaces only the dynamic agreement party/date fields in the official DOCX XML', async () => {
     const source = await readFile('public/templates/agreement-template.docx');
     const zip = await JSZip.loadAsync(source);
