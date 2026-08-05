@@ -1,5 +1,12 @@
 # Final Release Notes
 
+## Mobile Feasibility Dialog Fix
+
+- Corrected the full-screen mobile modal to use the visible dynamic viewport instead of the browser-obscured static viewport.
+- Preserved touch scrolling inside long forms and added safe-area spacing for Android/iOS browser controls.
+- Kept the Feasibility cancel and save/download actions sticky and reachable at the bottom of the phone screen.
+- Desktop modal sizing and document-generation workflow remain unchanged.
+
 ## Retry-Safe Invoice Issuance
 
 - Made `Save Installation and Issue Invoice` safe to retry after a slow response or stale browser state.
