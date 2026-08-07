@@ -1,12 +1,16 @@
-# Test Report — Final v14
+# Test Report — Invoice Signature Update
 
-Final verification date: 26/07/2026 (Asia/Kolkata)
+Final verification date: 07/08/2026 (Asia/Kolkata)
 
 - TypeScript typecheck: passed
 - ESLint with zero warnings: passed
-- Vitest: 16 files, 56 tests passed
-- Ordered SQL verification: 21 migrations, 35 required tables and security guards passed
+- Vitest: 16 files, 58 tests passed
+- Ordered SQL verification: 22 migrations, 35 required tables and security guards passed
 - Production Vite build: passed
+- Project and manual invoice forms default to `With Digital Stamp & Signature` and expose a deliberate unsigned option
+- Exact Quotation/Feasibility signature asset reused without raster recapture or quality loss
+- Signed and unsigned invoice snapshots preserve the selected choice for later reprints
+- Poppler visual QA: signed and unsigned outputs are one A4 page each, with no clipping, overlap or blank page
 - Quote-linked financial-year Bill Number tests: passed
 - Admin-only persistent Manual Invoice create/view/print/cancel flow: passed
 - Active Customer UI contains no Site Survey action or form
@@ -44,7 +48,7 @@ Final verification date: 26/07/2026 (Asia/Kolkata)
 
 Automated checks are run with `npm run typecheck`, `npm run lint`, `npm test`, `npm run verify:sql` and `npm run build`.
 
-Final local result after the mobile Feasibility modal correction: 56/56 tests passed; TypeScript, ESLint and the production Vite build completed successfully. The compact six-stage workflow mapping, optional loan branch and legacy-stage compatibility tests passed. Project invoices and manual invoices use the same one-page A4 vector invoice engine. The generated Agreement DOCX remains exactly four pages. The updated Feasibility PDF remains one A4 page, and the quotation remains exactly two A4 pages.
+Final local result after the optional invoice signature update: 58/58 tests passed; TypeScript, ESLint, ordered SQL verification and the production Vite build completed successfully. Project invoices and manual invoices use the same one-page A4 vector invoice engine. Signed and unsigned invoice renders were visually inspected at A4 size. The generated Agreement DOCX remains exactly four pages. The updated Feasibility PDF remains one A4 page, and the quotation remains exactly two A4 pages.
 
 Coverage includes capacity, nearest official price-row matching, the final 57-row five-PDF source, GST-inclusive and GST-extra 70/30 calculations, line-level CGST/SGST, Indian amount words, editable settings/number previews, role permissions, valid/invalid project transitions, material reservation/shortage, audited invoice cancellation/project cleanup, exact two-page quotation PDF, one-page included/extra invoice PDFs and `.xlsx` workbook headings/totals. SQL tests inspect required tables, exact role enum, RLS, secured settings/material operations, private project access and duplicate guards.
 

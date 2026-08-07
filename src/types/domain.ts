@@ -239,6 +239,7 @@ export interface Project {
 export interface InstallationDetails {
   invoiceNo?: string; invoiceDate?: string; placeOfSupply?: string;
   taxTreatment?: 'inclusive' | 'exclusive';
+  includeSignature?: boolean;
   panelBrand: string; panelTechnology: string; panelWattage: number; panelSerials: string[];
   inverterBrand: string; inverterModel: string; inverterCapacityKw: number; inverterSerial: string;
   acdb?: string; dcdb?: string; acCable?: string; dcCable?: string; earthingCable?: string;
@@ -376,6 +377,7 @@ export interface Invoice {
   grandTotal: number;
   taxRuleName?: string;
   taxLines?: InvoiceTaxLine[];
+  includeSignature?: boolean;
 }
 
 export interface ManualInvoiceRecord {

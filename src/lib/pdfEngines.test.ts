@@ -1,8 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createInvoicePdf } from './invoicePdf';
 import { createQuotationPdf } from './quotationPdf';
 import type { CrmSettings, Customer, Invoice, Project, Quotation } from '../types/domain';
+
+beforeAll(() => {
+  vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.pathname : new URL(input.url).pathname;
+    if (url.startsWith('/brand/')) {
+      return new Response(new Uint8Array(readFileSync(`public${url}`)), { status: 200, headers: { 'content-type': 'image/png' } });
+    }
+    return new Response(null, { status: 404 });
+  }));
+});
+
+afterAll(() => vi.unstubAllGlobals());
 
 const settings: CrmSettings = {
   company: {
@@ -58,6 +70,7 @@ const invoice: Invoice = {
   invoiceDate: '2026-07-19', placeOfSupply: 'Gujarat (24)', status: 'issued', taxMode: 'inclusive',
   quotedAmount: 160000, taxableValue: 147344.64, cgst: 6327.68, sgst: 6327.68, igst: 0, roundOff: 0, grandTotal: 160000,
   taxRuleName: 'Solar EPC 70/30 - Supply 5% / Installation 18%',
+  includeSignature: true,
   taxLines: [
     { lineType: 'supply', description: 'Solar Rooftop Power Generation System (PV Modules and Inverter)', hsnSac: '854140', sharePercent: 70, gstRate: 5, grossAmount: 112000, taxableValue: 106666.67, cgst: 2666.67, sgst: 2666.66, igst: 0 },
     { lineType: 'installation', description: 'Mounting Structure and Balance of System (BOS) Materials for Solar Installation', hsnSac: '995442', sharePercent: 30, gstRate: 18, grossAmount: 48000, taxableValue: 40677.97, cgst: 3661.01, sgst: 3661.02, igst: 0 },
@@ -95,6 +108,18 @@ describe('vector A4 document engines', () => {
     expect(pdf.getNumberOfPages()).toBe(1);
     expect(pdf.output('arraybuffer').byteLength).toBeGreaterThan(5000);
     if (process.env.WRITE_PDF_FIXTURES) writeFileSync(`${process.env.WRITE_PDF_FIXTURES}/invoice.pdf`, Buffer.from(pdf.output('arraybuffer')));
+  });
+
+  it('uses the sharp feasibility signature by default and supports an unsigned invoice', async () => {
+    const signed = await createInvoicePdf({ invoice, project, customer, settings });
+    const unsigned = await createInvoicePdf({ invoice: { ...invoice, includeSignature: false }, project, customer, settings });
+    expect(signed.getNumberOfPages()).toBe(1);
+    expect(unsigned.getNumberOfPages()).toBe(1);
+    expect(signed.output('arraybuffer').byteLength).toBeGreaterThan(unsigned.output('arraybuffer').byteLength + 20_000);
+    if (process.env.WRITE_PDF_FIXTURES) {
+      writeFileSync(`${process.env.WRITE_PDF_FIXTURES}/invoice-signed.pdf`, Buffer.from(signed.output('arraybuffer')));
+      writeFileSync(`${process.env.WRITE_PDF_FIXTURES}/invoice-unsigned.pdf`, Buffer.from(unsigned.output('arraybuffer')));
+    }
   });
 
   it('creates a single-page GST-extra invoice PDF without changing the accepted quote snapshot', async () => {

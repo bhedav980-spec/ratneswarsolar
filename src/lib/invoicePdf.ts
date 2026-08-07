@@ -13,6 +13,16 @@ interface InvoicePdfInput {
 
 const PDF_FONT = 'InvoiceSans';
 
+async function imageData(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) return null;
+  const type = response.headers.get('content-type') || 'image/png';
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  return `data:${type};base64,${btoa(binary)}`;
+}
+
 function installInvoiceFonts(doc: jsPDF) {
   const regular = invoiceFontRegular.slice(invoiceFontRegular.indexOf(',') + 1);
   const bold = invoiceFontBold.slice(invoiceFontBold.indexOf(',') + 1);
@@ -170,6 +180,7 @@ export async function createInvoicePdf(input: InvoicePdfInput) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
   installInvoiceFonts(doc);
   const { invoice, settings } = input; const company = settings.company; const bank = settings.bank; const displayLines=invoiceLines(input); const totalTax=roundMoney(displayLines.reduce((sum,line)=>sum+line.cgst+line.sgst+line.igst,0));
+  const signature=invoice.includeSignature!==false?await imageData('/brand/ratneswar-authorised-signature.png').catch(()=>null):null;
   doc.setTextColor(0,0,0); doc.setDrawColor(0,0,0); doc.setLineWidth(.22);
   doc.setFont(PDF_FONT,'bold'); doc.setFontSize(13); doc.text('Tax Invoice',105,10,{align:'center'}); doc.setFont(PDF_FONT,'italic'); doc.setFontSize(8.5); doc.text('(ORIGINAL FOR RECIPIENT)',197.5,10,{align:'right'});
   drawPartyAndMeta(doc,input,16,65); drawItems(doc,input,81,78);
@@ -181,7 +192,7 @@ export async function createInvoicePdf(input: InvoicePdfInput) {
   const bottomTop=211; const bottomHeight=56; const half=94.5; doc.rect(10.5,bottomTop,189,bottomHeight); doc.line(105,bottomTop,105,bottomTop+bottomHeight); doc.line(105,bottomTop+28,199.5,bottomTop+28);
   doc.setFont(PDF_FONT,'normal'); doc.setFontSize(7.5); doc.text("Company's PAN:",12,bottomTop+6); doc.setFont(PDF_FONT,'bold'); doc.text(clean(company.pan),36,bottomTop+6); doc.setFont(PDF_FONT,'normal'); doc.text('Declaration',12,bottomTop+38); doc.line(12,bottomTop+38.5,28,bottomTop+38.5); writeLines(doc,wrapped(doc,'We declare that this invoice shows the actual value of the goods and services described and that all particulars are true and correct.',half-4),12,bottomTop+42,7.2,'normal',3);
   doc.setFont(PDF_FONT,'normal'); doc.setFontSize(7.2); doc.text("Company's Bank Details",152.25,bottomTop+4,{align:'center'}); const bankLines=[`Bank Name: ${bank.bankName}`,`A/c No.: ${bank.accountNumber}`,`Branch & IFS Code: ${bank.branch} & ${bank.ifsc}`]; let bankY=bottomTop+9; bankLines.forEach((line)=>{ const [label,...rest]=line.split(':'); doc.setFont(PDF_FONT,'normal'); doc.text(`${label}:`,107,bankY); doc.setFont(PDF_FONT,'bold'); doc.text(clean(rest.join(':').trim()),132,bankY); bankY+=4; });
-  doc.setFont(PDF_FONT,'bold'); doc.setFontSize(7.5); doc.text(clean(`for ${company.legalName}`),197.5,bottomTop+32,{align:'right'}); doc.text('Authorised Signatory',197.5,bottomTop+52,{align:'right'});
+  doc.setFont(PDF_FONT,'bold'); doc.setFontSize(7.5); doc.text(clean(`for ${company.legalName}`),197.5,bottomTop+32,{align:'right'}); if(signature)doc.addImage(signature,'PNG',168.5,bottomTop+33.2,27,21.2,undefined,'NONE'); doc.text('Authorised Signatory',197.5,bottomTop+55,{align:'right'});
   doc.setFont(PDF_FONT,'normal'); doc.setFontSize(7.8); doc.text(clean(`SUBJECT TO ${company.jurisdiction.toUpperCase()} JURISDICTION`),105,276,{align:'center'}); doc.setFontSize(7.3); doc.text('This is a Computer Generated Invoice',105,284,{align:'center'});
   return doc;
 }

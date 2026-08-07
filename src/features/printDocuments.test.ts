@@ -8,6 +8,8 @@ describe('clean printable documents', () => {
   const engine = readFileSync('src/lib/printDocument.ts', 'utf8');
   const invoiceEngine = readFileSync('src/lib/invoicePdf.ts', 'utf8');
   const quotationEngine = readFileSync('src/lib/quotationPdf.ts', 'utf8');
+  const projectFeature = readFileSync('src/features/Projects.tsx', 'utf8');
+  const invoiceSignatureMigration = readFileSync('supabase/migrations/202608070022_invoice_signature_preference.sql', 'utf8');
 
   it('uses clean PDF generation instead of browser page printing', () => {
     expect(quotation).not.toContain('window.print');
@@ -58,5 +60,16 @@ describe('clean printable documents', () => {
     expect(quotationEngine).not.toContain('Loan Commercials');
     expect(quotationEngine).not.toContain('Total Informational Subsidy');
     expect(quotationEngine).not.toContain('not deducted from this quotation value');
+  });
+
+  it('defaults invoice generation to the exact feasibility signature and preserves the selected choice', () => {
+    expect(projectFeature).toContain('includeSignature:true');
+    expect(projectFeature).toContain('With Digital Stamp &amp; Signature');
+    expect(projectFeature).toContain('Without Signature');
+    expect(invoice).toContain("invoice.includeSignature!==false");
+    expect(invoiceEngine).toContain("imageData('/brand/ratneswar-authorised-signature.png')");
+    expect(invoiceEngine).toContain("invoice.includeSignature!==false");
+    expect(invoiceSignatureMigration).toContain("'{includeSignature}'");
+    expect(invoiceSignatureMigration).toContain("details->>'includeSignature'");
   });
 });

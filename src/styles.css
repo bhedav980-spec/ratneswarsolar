@@ -384,7 +384,7 @@ textarea { min-height: 78px; resize: vertical; }
 .tally-bottom-grid { min-height:42mm; display:grid; grid-template-columns:1fr 1fr; border:.3mm solid #111; border-top:0; }
 .tally-declaration,.tally-bank-sign { min-width:0; padding:1.2mm; display:flex; flex-direction:column; }
 .tally-declaration { justify-content:flex-end; border-right:.25mm solid #111; }.tally-declaration p { margin:0 0 6mm; }.tally-declaration span { margin-top:.5mm; }
-.tally-bank-sign { padding:0; }.tally-bank-sign > div:first-child { padding:1.2mm; display:grid; grid-template-columns:1fr; gap:.5mm; }.tally-bank-sign label { text-align:center; }.tally-authorised { flex:1; padding:1.2mm; display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end; border-top:.25mm solid #111; font-weight:700; }
+.tally-bank-sign { padding:0; }.tally-bank-sign > div:first-child { padding:1.2mm; display:grid; grid-template-columns:1fr; gap:.5mm; }.tally-bank-sign label { text-align:center; }.tally-authorised { flex:1; min-height:28mm; padding:1.2mm; display:grid; grid-template-rows:auto minmax(0,1fr) auto; justify-items:end; align-items:center; border-top:.25mm solid #111; font-weight:700; }.tally-authorised > img { width:27mm; height:21.2mm; object-fit:contain; object-position:center; image-rendering:auto; }
 .tally-footer { min-height:13mm; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2mm; font-size:8pt; }
 .tally-footer span { font-size:7.8pt; }
 .tally-invoice-annexure .tally-party-meta { min-height:64mm; }

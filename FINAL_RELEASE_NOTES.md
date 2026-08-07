@@ -1,5 +1,15 @@
 # Final Release Notes
 
+## Optional Sharp Invoice Signature
+
+- Reused the exact high-resolution Ratneswar Engineering stamp/signature asset already used by the Quotation and Vendor Feasibility PDFs.
+- Added `With Digital Stamp & Signature` and `Without Signature` choices to both project-linked and Admin manual invoice forms.
+- `With Digital Stamp & Signature` is selected by default.
+- Saved the selection inside each immutable invoice snapshot so every future preview, print and download reproduces the issued choice.
+- Existing invoices without a stored preference remain signed by default.
+- Kept signed and unsigned output to one selectable-text A4 page with no layout or tax-calculation changes.
+- Added migration `202608070022_invoice_signature_preference.sql` for existing deployments.
+
 ## Mobile Feasibility Dialog Fix
 
 - Corrected the full-screen mobile modal to use the visible dynamic viewport instead of the browser-obscured static viewport.

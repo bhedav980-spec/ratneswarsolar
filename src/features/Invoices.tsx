@@ -34,6 +34,7 @@ interface ManualInvoiceFormValue {
   quotedAmount: number;
   taxTreatment: 'inclusive' | 'exclusive';
   placeOfSupply: string;
+  includeSignature: boolean;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -80,6 +81,7 @@ function ManualInvoiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
     inverterBrand:'KSOLE',inverterModel:'',inverterCapacityKw:0,inverterSerial:'',
     quotedAmount:0,taxTreatment:'inclusive',
     placeOfSupply:`${data?.settings.company.state ?? 'Gujarat'} (${data?.settings.company.stateCode ?? '24'})`,
+    includeSignature:true,
   });
   if (!data) return null;
   const set = <K extends keyof ManualInvoiceFormValue>(key: K, value: ManualInvoiceFormValue[K]) => setForm((current)=>({...current,[key]:value}));
@@ -116,6 +118,7 @@ function ManualInvoiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
       paymentReceived:0,expensesTotal:0,createdAt:form.invoiceDate,updatedAt:form.invoiceDate,
       installationMaterials:{
         invoiceNo,invoiceDate:form.invoiceDate,placeOfSupply:form.placeOfSupply,taxTreatment:form.taxTreatment,
+        includeSignature:form.includeSignature,
         panelBrand:form.panelBrand.trim(),panelTechnology:form.panelTechnology,panelWattage:form.panelWattage,panelSerials,
         inverterBrand:form.inverterBrand.trim(),inverterModel:form.inverterModel.trim(),inverterCapacityKw:form.inverterCapacityKw,
         inverterSerial:form.inverterSerial.trim(),
@@ -125,6 +128,7 @@ function ManualInvoiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
       id,invoiceNo,customerId,projectId,invoiceDate:form.invoiceDate,placeOfSupply:form.placeOfSupply,status:'issued',
       taxMode:form.taxTreatment,quotedAmount:form.quotedAmount,taxableValue:taxPreview.taxableValue,cgst:taxPreview.cgst,
       sgst:taxPreview.sgst,igst:taxPreview.igst,roundOff:0,grandTotal:taxPreview.gross,taxRuleName:activeTaxRule.name,taxLines:taxPreview.lines,
+      includeSignature:form.includeSignature,
     };
     return {
       id,invoiceNo,legacyQuoteNo:quoteNo,invoiceDate:form.invoiceDate,customerName:customer.fullName,mobile:customer.mobile,
@@ -164,6 +168,7 @@ function ManualInvoiceForm({ onClose, onCreated }: { onClose: () => void; onCrea
       <Field label="Accepted Quotation Amount *"><input required min="1" step="0.01" type="number" value={form.quotedAmount||''} onChange={(event)=>set('quotedAmount',Number(event.target.value))}/></Field>
       <Field label="GST Treatment"><select value={form.taxTreatment} onChange={(event)=>set('taxTreatment',event.target.value as 'inclusive'|'exclusive')}><option value="inclusive">GST Included in Entered Amount</option><option value="exclusive">Add GST Above Entered Amount</option></select></Field>
       <Field label="Place of Supply *"><input required value={form.placeOfSupply} onChange={(event)=>set('placeOfSupply',event.target.value)}/></Field>
+      <Field label="Invoice Signature"><select value={form.includeSignature?'with':'without'} onChange={(event)=>set('includeSignature',event.target.value==='with')}><option value="with">With Digital Stamp &amp; Signature</option><option value="without">Without Signature</option></select><small>With Signature is selected by default.</small></Field>
     </div>{taxPreview&&activeTaxRule&&<div className="invoice-tax-preview"><strong>{activeTaxRule.name}</strong>{taxPreview.lines.map((line)=><div key={line.lineType}><span>{line.description} · {line.sharePercent}%</span><span>Taxable {formatInr(line.taxableValue)} · GST {line.gstRate}% · Total {formatInr(line.grossAmount)}</span></div>)}<b>Final invoice total: {formatInr(taxPreview.gross)}</b></div>}</section>
     {error&&<div className="alert alert--error">{error}</div>}
     <div className="form-actions"><button type="button" className="btn" onClick={onClose}>Cancel</button><button className="btn btn--primary" disabled={saving||!activeTaxRule||!taxPreview}>{saving?'Saving...':'Save and Open Invoice'}</button></div>
