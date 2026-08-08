@@ -71,8 +71,8 @@ describe('clean printable documents', () => {
     expect(invoiceEngine).toContain("invoice.includeSignature!==false");
     expect(invoiceEngine).toContain("131.25,bottomTop+23,42,32.94");
     expect(styles).toContain("width:42mm; height:32.94mm");
-    expect(invoiceEngine).toContain("doc.GState({opacity:.68})");
-    expect(styles).toContain("opacity:.68");
+    expect(invoiceEngine).not.toContain("doc.GState({opacity:");
+    expect(styles).not.toContain("opacity:.68");
     expect(invoiceSignatureMigration).toContain("'{includeSignature}'");
     expect(invoiceSignatureMigration).toContain("details->>'includeSignature'");
   });
