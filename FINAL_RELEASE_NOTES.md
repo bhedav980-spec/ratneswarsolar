@@ -7,7 +7,7 @@
 - `With Digital Stamp & Signature` is selected by default.
 - Saved the selection inside each immutable invoice snapshot so every future preview, print and download reproduces the issued choice.
 - Existing invoices without a stored preference remain signed by default.
-- Enlarged the exact original stamp/signature by about 30% and kept its native aspect ratio, with a dedicated side-by-side placement that avoids text overlap.
+- Enlarged the exact original stamp/signature further, kept its native aspect ratio and centred it across the authorised-signatory area for a natural stamped-document overlap.
 - Kept signed and unsigned output to one selectable-text A4 page with no layout or tax-calculation changes.
 - Added migration `202608070022_invoice_signature_preference.sql` for existing deployments.
 

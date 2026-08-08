@@ -69,8 +69,8 @@ describe('clean printable documents', () => {
     expect(invoice).toContain("invoice.includeSignature!==false");
     expect(invoiceEngine).toContain("imageData('/brand/ratneswar-authorised-signature.png')");
     expect(invoiceEngine).toContain("invoice.includeSignature!==false");
-    expect(invoiceEngine).toContain("114,bottomTop+28.3,35,27.45");
-    expect(styles).toContain("width:35mm; height:27.45mm");
+    expect(invoiceEngine).toContain("131.25,bottomTop+23,42,32.94");
+    expect(styles).toContain("width:42mm; height:32.94mm");
     expect(invoiceSignatureMigration).toContain("'{includeSignature}'");
     expect(invoiceSignatureMigration).toContain("details->>'includeSignature'");
   });
