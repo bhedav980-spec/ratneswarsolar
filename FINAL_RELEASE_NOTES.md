@@ -8,6 +8,7 @@
 - Saved the selection inside each immutable invoice snapshot so every future preview, print and download reproduces the issued choice.
 - Existing invoices without a stored preference remain signed by default.
 - Enlarged the exact original stamp/signature further, kept its native aspect ratio and centred it across the authorised-signatory area for a natural stamped-document overlap.
+- Applied a transparent blue-ink overlay and kept both signatory labels in the readable foreground, matching the appearance of a physical stamp over printed text.
 - Kept signed and unsigned output to one selectable-text A4 page with no layout or tax-calculation changes.
 - Added migration `202608070022_invoice_signature_preference.sql` for existing deployments.
 
